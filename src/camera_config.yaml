@@ -1,0 +1,8 @@
+# configuration for ELP USB camera stream in Python-OpenCV
+---
+window_name: "window"
+
+resolution:
+  - 1920
+  - 1080
+
