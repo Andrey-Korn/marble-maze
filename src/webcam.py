@@ -14,7 +14,7 @@ class webcam():
 
 		# check if camera can open
 		if not self.vid.isOpened():
-		    print(f"cannot open camera w/id: {cam_id}")
+		    print(f"cannot open camera w/id: {self.settings['camera_id']}")
 		    exit()
 
 		# set camera properties

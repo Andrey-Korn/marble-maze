@@ -20,15 +20,6 @@ if args.config is not None:
 # create a camera object with the given config
 camera = webcam.webcam(config_file)
 
-video_out = None
-if args.record is not None:
-    # fourcc = cv.VideoWriter_fourcc('m', 'p', '4', 'v')
-    # fourcc = cv.VideoWriter_fourcc(*'mp4v')
-    fourcc = cv.VideoWriter_fourcc(*'XVID')
-    video_out = cv.VideoWriter(args.record, fourcc, camera.fps, (camera.frame_width, camera.frame_height))
-
-start_t = time.time()
-
 while True:
     # grab frame
     ret, frame = camera.vid.read()
@@ -40,16 +31,9 @@ while True:
     # display frame
     cv.imshow(camera.window_name, frame)
 
-    # if video_out is not None:
-    video_out.write(frame)
-
     if cv.waitKey(1) == ord('q'):
         break
 
-end_t = time.time()
-
-
 camera.print_camera_settings()
 camera.vid.release()
-video_out.release()
 cv.destroyAllWindows()
