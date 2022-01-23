@@ -2,7 +2,16 @@
 ---
 window_name: "window"
 
+camera_id: 1
+
 resolution:
   - 1920
   - 1080
 
+fps: 60
+
+brightness: 10
+
+contrast: 10
+
+saturation: 48
