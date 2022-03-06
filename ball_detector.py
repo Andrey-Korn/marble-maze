@@ -16,6 +16,8 @@ while cap.isOpened():
         print("Error: video frame not loaded.")
         break
 
+    detect_and_draw_path(frame)
+
     ball_pos = detect_blue_ball(frame)
 
     # Draw ball position and message text onto video frame

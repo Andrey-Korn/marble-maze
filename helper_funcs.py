@@ -106,20 +106,45 @@ def detect_blue_ball(src: np.ndarray) -> tuple:
         return None
 
 
+def detect_and_draw_path(img: np.ndarray) -> None:
+
+    gray = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
+    blur = cv.GaussianBlur(gray, (5, 5), 1)
+    
+    # Method 1
+    # adaptive = cv.adaptiveThreshold(blur, 255, cv.ADAPTIVE_THRESH_MEAN_C, cv.THRESH_BINARY, 13, 3)
+    # # dilated = cv.dilate(eroded, (7, 7), iterations=10)
+    # canny = cv.Canny(blur, 125, 175)
+    # contours, hierarchy = cv.findContours(canny, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_NONE)
+    # # img = cv.cvtColor(img, cv.COLOR_BGR2RGB)
+
+    # Method 2 (faster?)
+    ret, thresh = cv.threshold(blur, 170, 255, cv.THRESH_BINARY_INV)
+    contours, hierarchy = cv.findContours(thresh, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_NONE)
+    # print(len(contours))
+    
+    # Draw contours whose centers are close to the expected center of the path
+    for cnt in contours:
+        
+        # Calculate centroid of contour
+        M = cv.moments(cnt)
+        if M["m00"] != 0:
+            cX = int(M["m10"] / M["m00"])
+            cY = int(M["m01"] / M["m00"])
+        else:
+            cX, cY = -1, -1
+        
+        near_center = cX > 950 and cX < 970 and cY > 575 and cY < 600
+        area = cv.contourArea(cnt)
+        if near_center and area > 100:
+            cv.drawContours(img, cnt, -1, color_map["orange"], 2)
+
+    # cv.imshow('detect_lines', adaptive)
+
+    return
+
     # TODO Notes to clean up
     # denoise = cv.fastNlMeansDenoisingColored(frame, None, 10, 10, 7, 21)
-    # adaptive = cv.adaptiveThreshold(blur, 255, cv.ADAPTIVE_THRESH_MEAN_C, cv.THRESH_BINARY, 13, 3)
-    # dilated = cv.dilate(eroded, (7, 7), iterations=10)
-    # canny = cv.Canny(dilated, 125, 175)
-
-    # contours, hierarchy = cv.findContours(final, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_NONE)
-    # frame = cv.cvtColor(final, cv.COLOR_BGR2RGB)
-    # for cnt in contours:
-    #     area = cv.contourArea(cnt)
-    #     if area < 250 or area > 10000:
-    #         continue
-    #     # print(area)
-    #     cv.drawContours(frame, cnt, -1, (0,255,0), 2)
 
     # # SURF ("Speeded-Up SIFT")
     # # Here I set Hessian Threshold to 400
