@@ -39,7 +39,8 @@ color_map = {
 
 
 def draw_text(img: np.ndarray, text:str, position: tuple, BGR_color: tuple) -> None:
-    
+    """ Draws text of color BGR_color to img at position """
+
     new_img = cv.putText(img, text, position, cv.FONT_HERSHEY_SIMPLEX, 2, BGR_color, 3)
     img = new_img
 
@@ -89,9 +90,10 @@ def detect_blue_ball(src: np.ndarray) -> tuple:
     no_green_red = cv.bitwise_and(no_green, no_green, mask=no_red)
 
     kernel = np.ones((3,3), np.uint8)
-    eroded = cv.erode(no_green_red, kernel, iterations=1)
+    # eroded = cv.erode(no_green_red, kernel, iterations=1)
+    eroded_dilated = erode_and_dilate(no_green_red, 3)
 
-    final_image = eroded
+    final_image = eroded_dilated
 
     circles = cv.HoughCircles(final_image, cv.HOUGH_GRADIENT, 1, 50, param1=30, param2=15, minRadius=3, maxRadius=50)
 

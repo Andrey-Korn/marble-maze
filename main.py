@@ -60,7 +60,7 @@ while cap.isOpened():
         ball_pos = new_ball_pos
 
     # If ball not found during this cycle, tally a detection failure (currently stops at frame 769, as this is when the ball falls into a hole in the training video)
-    if frame_count < 769:
+    if ball_pos is None and frame_count < 769:
         missed_frames_ball += 1
 
 
@@ -92,4 +92,4 @@ cv.destroyAllWindows()
 
 # Print statistics to terminal
 print(f"Number of frames where ball was missed: {missed_frames_ball}")
-print(f"Ball detection rate: {np.around((1 - missed_frames_ball / frame_count), decimals=3) * 100}%")
+print(f"Ball detection rate: {np.around((1 - missed_frames_ball / frame_count), decimals=4) * 100}%")
