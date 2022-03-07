@@ -92,7 +92,7 @@ def detect_blue_ball(src: np.ndarray) -> tuple:
 
     final_image = eroded
 
-    circles = cv.HoughCircles(final_image, cv.HOUGH_GRADIENT, 1, 50, param1=30, param2=15, minRadius=10, maxRadius=30)
+    circles = cv.HoughCircles(final_image, cv.HOUGH_GRADIENT, 1, 50, param1=30, param2=15, minRadius=3, maxRadius=50)
 
     if circles is not None:
         circles = np.uint16(np.around(circles))
@@ -106,7 +106,7 @@ def detect_blue_ball(src: np.ndarray) -> tuple:
         return None
 
 
-def detect_and_draw_path(img: np.ndarray) -> None:
+def detect_path(img: np.ndarray) -> None:
 
     gray = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
     blur = cv.GaussianBlur(gray, (5, 5), 1)
@@ -140,36 +140,35 @@ def detect_and_draw_path(img: np.ndarray) -> None:
         area = cv.contourArea(cnt)
         # if near_center and area > 100:
         if near_center and cv.arcLength(cnt, True) > 10_000:
-            # cv.drawContours(img, cnt, -1, color_map["red"], 2)
-            print(f"x, y: {cX}, {cY}")
+            # print(f"x, y: {cX}, {cY}")
             return cnt
 
     # cv.imshow('detect_lines', thresh[120:1030, 430:1490])
 
     return
 
-    # TODO Notes to clean up
-    # denoise = cv.fastNlMeansDenoisingColored(frame, None, 10, 10, 7, 21)
+# TODO Notes to clean up
+# denoise = cv.fastNlMeansDenoisingColored(frame, None, 10, 10, 7, 21)
 
-    # # SURF ("Speeded-Up SIFT")
-    # # Here I set Hessian Threshold to 400
-    # surf = cv.xfeatures2d.SURF_create(400)
-    # # Find keypoints and descriptors directly
-    # kp, des = surf.detectAndCompute(frame,None)
-    # frame2 = cv.drawKeypoints(frame,kp,None,(255,0,0),4)
-    # plt.imshow(frame2),plt.show()
+# # SURF ("Speeded-Up SIFT")
+# # Here I set Hessian Threshold to 400
+# surf = cv.xfeatures2d.SURF_create(400)
+# # Find keypoints and descriptors directly
+# kp, des = surf.detectAndCompute(frame,None)
+# frame2 = cv.drawKeypoints(frame,kp,None,(255,0,0),4)
+# plt.imshow(frame2),plt.show()
 
-    # # SIFT
-    # corners = cv.goodFeaturesToTrack(final,500,0.01,10)
-    # corners = np.int0(corners)
-    # for i in corners:
-    #     x,y = i.ravel()
-    #     cv.circle(frame,(x,y),5,255,-1)
-    # plt.imshow(frame),plt.show()
+# # SIFT
+# corners = cv.goodFeaturesToTrack(final,500,0.01,10)
+# corners = np.int0(corners)
+# for i in corners:
+#     x,y = i.ravel()
+#     cv.circle(frame,(x,y),5,255,-1)
+# plt.imshow(frame),plt.show()
 
-    # HARRIS
-    # dst = cv.cornerHarris(gray,50,3,0.04)
-    # #result is dilated for marking the corners
-    # dst = cv.dilate(dst,None)
-    # # Threshold for an optimal value, it may vary depending on the image.
-    # frame[dst>0.01*dst.max()]=[0,0,255]
+# HARRIS
+# dst = cv.cornerHarris(gray,50,3,0.04)
+# #result is dilated for marking the corners
+# dst = cv.dilate(dst,None)
+# # Threshold for an optimal value, it may vary depending on the image.
+# frame[dst>0.01*dst.max()]=[0,0,255]
