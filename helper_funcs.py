@@ -135,11 +135,16 @@ def detect_and_draw_path(img: np.ndarray) -> None:
             cX, cY = -1, -1
         
         near_center = cX > 950 and cX < 970 and cY > 575 and cY < 600
+        near_center = True
+        near_center = cX > 560 and cX < 580 and cY > 480 and cY < 500
         area = cv.contourArea(cnt)
-        if near_center and area > 100:
-            cv.drawContours(img, cnt, -1, color_map["orange"], 2)
+        # if near_center and area > 100:
+        if near_center and cv.arcLength(cnt, True) > 10_000:
+            # cv.drawContours(img, cnt, -1, color_map["red"], 2)
+            print(f"x, y: {cX}, {cY}")
+            return cnt
 
-    # cv.imshow('detect_lines', adaptive)
+    # cv.imshow('detect_lines', thresh[120:1030, 430:1490])
 
     return
 
