@@ -2,7 +2,7 @@ import cv2 as cv
 import numpy as np
 
 
-# Map example videos to paths
+# Maps example videos to paths
 prefix = "videos"
 video_path_map = {
     # Metal ball
@@ -37,7 +37,8 @@ color_map = {
     "magenta":      (255,   0,      255 )
 }
 
-def draw_text(img: np.ndarray, text: str, position: tuple, BGR_color: tuple) -> None:
+
+def draw_text(img: np.ndarray, text:str, position: tuple, BGR_color: tuple) -> None:
     
     new_img = cv.putText(img, text, position, cv.FONT_HERSHEY_SIMPLEX, 2, BGR_color, 3)
     img = new_img
@@ -56,7 +57,7 @@ def draw_circles(img: np.ndarray, circles: list, num: int = -1, BGR_color: tuple
     return
 
 
-def erode_and_dilate(src: np.ndarray, kernel_size: int, iterations: int=1):
+def erode_and_dilate(src: np.ndarray, kernel_size: int, iterations: int = 1) -> np.ndarray:
     """ Performs a series of erosions followed by dilations on src image """
     
     erosion_kernel = np.ones((  kernel_size, kernel_size), np.uint8)
@@ -110,18 +111,15 @@ def detect_path(img: np.ndarray) -> None:
 
     gray = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
     blur = cv.GaussianBlur(gray, (5, 5), 1)
-    
-    # Method 1
-    # adaptive = cv.adaptiveThreshold(blur, 255, cv.ADAPTIVE_THRESH_MEAN_C, cv.THRESH_BINARY, 13, 3)
-    # # dilated = cv.dilate(eroded, (7, 7), iterations=10)
+
+    # # Method 1
+    # # adaptive = cv.adaptiveThreshold(blur, 255, cv.ADAPTIVE_THRESH_MEAN_C, cv.THRESH_BINARY, 13, 3)
     # canny = cv.Canny(blur, 125, 175)
     # contours, hierarchy = cv.findContours(canny, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_NONE)
-    # # img = cv.cvtColor(img, cv.COLOR_BGR2RGB)
 
-    # Method 2 (faster?)
+    # Method 2 (faster and more accurate)
     ret, thresh = cv.threshold(blur, 170, 255, cv.THRESH_BINARY_INV)
     contours, hierarchy = cv.findContours(thresh, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_NONE)
-    # print(len(contours))
     
     # Draw contours whose centers are close to the expected center of the path
     for cnt in contours:
@@ -134,41 +132,9 @@ def detect_path(img: np.ndarray) -> None:
         else:
             cX, cY = -1, -1
         
-        near_center = cX > 950 and cX < 970 and cY > 575 and cY < 600
-        near_center = True
+        # near_center = cX > 950 and cX < 970 and cY > 575 and cY < 600  # Used for non-cropped 1080p video
         near_center = cX > 560 and cX < 580 and cY > 480 and cY < 500
-        area = cv.contourArea(cnt)
-        # if near_center and area > 100:
         if near_center and cv.arcLength(cnt, True) > 10_000:
-            # print(f"x, y: {cX}, {cY}")
             return cnt
 
-    # cv.imshow('detect_lines', thresh[120:1030, 430:1490])
-
     return
-
-# TODO Notes to clean up
-# denoise = cv.fastNlMeansDenoisingColored(frame, None, 10, 10, 7, 21)
-
-# # SURF ("Speeded-Up SIFT")
-# # Here I set Hessian Threshold to 400
-# surf = cv.xfeatures2d.SURF_create(400)
-# # Find keypoints and descriptors directly
-# kp, des = surf.detectAndCompute(frame,None)
-# frame2 = cv.drawKeypoints(frame,kp,None,(255,0,0),4)
-# plt.imshow(frame2),plt.show()
-
-# # SIFT
-# corners = cv.goodFeaturesToTrack(final,500,0.01,10)
-# corners = np.int0(corners)
-# for i in corners:
-#     x,y = i.ravel()
-#     cv.circle(frame,(x,y),5,255,-1)
-# plt.imshow(frame),plt.show()
-
-# HARRIS
-# dst = cv.cornerHarris(gray,50,3,0.04)
-# #result is dilated for marking the corners
-# dst = cv.dilate(dst,None)
-# # Threshold for an optimal value, it may vary depending on the image.
-# frame[dst>0.01*dst.max()]=[0,0,255]
