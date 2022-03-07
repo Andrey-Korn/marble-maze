@@ -109,7 +109,13 @@ def detect_blue_ball(src: np.ndarray) -> tuple:
         return None
 
 
-def detect_path(img: np.ndarray) -> None:
+def detect_path(img: np.ndarray) -> np.ndarray:
+    """
+    Detects the path decal on the game board.
+    Returns:
+        * a contour found using np.findContours()
+        * if no matching contour found, returns None 
+    """
 
     gray = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
     blur = cv.GaussianBlur(gray, (5, 5), 1)
@@ -137,6 +143,7 @@ def detect_path(img: np.ndarray) -> None:
         # near_center = cX > 950 and cX < 970 and cY > 575 and cY < 600  # Used for non-cropped 1080p video
         near_center = cX > 560 and cX < 580 and cY > 480 and cY < 500
         if near_center and cv.arcLength(cnt, True) > 10_000:
+            print(cnt)
             return cnt
 
     return
