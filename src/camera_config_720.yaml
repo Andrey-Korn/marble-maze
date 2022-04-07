@@ -1,0 +1,17 @@
+# configuration for ELP USB camera stream in Python-OpenCV
+---
+window_name: "window"
+
+camera_id: 2
+
+resolution:
+  - 1280
+  - 720
+
+fps: 120
+
+brightness: 10
+
+contrast: 15
+
+saturation: 30
