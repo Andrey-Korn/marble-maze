@@ -1,7 +1,6 @@
 import cv2 as cv
 import webcam
 import argparse
-import time
 
 # specify command line args
 parser = argparse.ArgumentParser(description='Monitor or record a webcam feed.')

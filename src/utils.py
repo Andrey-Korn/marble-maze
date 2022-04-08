@@ -71,6 +71,9 @@ def erode_and_dilate(src: np.ndarray, kernel_size: int, iterations: int = 1) -> 
 
     return src
 
+def ball_error(ball_pos, target):
+    return (target[0] - ball_pos[0], target[1] - ball_pos[1])
+
 
 def detect_blue_ball(src: np.ndarray) -> tuple:
     """ 
