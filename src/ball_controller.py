@@ -14,7 +14,7 @@ class ball_controller:
 
     # target to move the ball towards
     target = None
-    target_range = 17
+    target_range = 20
 
     # frame stats
     frame_count, missed_frames_ball = 0, 0
@@ -39,7 +39,7 @@ class ball_controller:
             self.target = (x, y, 1)
 
     def at_target(self):
-        return (abs(self.error[0]) < self.target_range and abs(self.error[0]) < self.target_range)
+        return (abs(self.error[0]) < self.target_range and abs(self.error[1]) < self.target_range)
         
 
     def update(self):
@@ -67,7 +67,7 @@ class ball_controller:
                     max(0, new_ball_pos[1] + self.ball_pos[1] - area_size - y_min_offset),
                     new_ball_pos[2]
                 )
-                self.ball_pos = new_ball_pos
+            self.ball_pos = new_ball_pos
 
         # count missed ball frames
         if self.ball_pos is None:
