@@ -1,13 +1,12 @@
 import cv2 as cv
 import yaml
+import utils
 
 class webcam():
 
-	def __init__(self, config_file):
-		self.config_file = config_file
-
+	def __init__(self, conf):
 		# read camera config yaml
-		self.read_yaml()
+		self.settings = utils.read_yaml(conf)
 
 		# init camera capture
 		self.vid = cv.VideoCapture(self.settings['camera_id'])
@@ -21,16 +20,7 @@ class webcam():
 		self.set_camera_settings()
 
 
-	# use yaml camera config file to read in all desired camera settings
-	def read_yaml(self):
-		with open(self.config_file, 'r') as file:
-			self.settings = yaml.safe_load(file)
-
-		# print(self.settings)
-		
-
 	def set_camera_settings(self):
-
 		# set fullscreen
 		self.window_name = self.settings['window_name']
 		cv.namedWindow(self.window_name, cv.WND_PROP_FULLSCREEN)
@@ -74,6 +64,39 @@ class webcam():
 		# print(f'hue: {self.vid.get(cv.CAP_PROP_HUE)}')
 		# print(f'auto white balance: {self.vid.get(cv.CAP_PROP_AUTO_WB)}')
 		# print(f'auto wb temperature: {self.vid.get(cv.CAP_PROP_WB_TEMPERATURE)}')
-
 		print(f'frame count: {self.vid.get(cv.CAP_PROP_FRAME_COUNT)}')
 
+	def read_frame(self):
+		return self.vid.read()
+
+	def get_window_name(self):
+		return self.window_name
+
+
+# display screen if webcam.py ran as a standalone script
+def main():
+
+	# create a camera object with the given config
+	conf = utils.config_files['camera_1080']
+	camera = webcam(conf)
+
+	while True:
+		# grab frame
+		ret, frame = camera.read_frame()
+
+		if not ret:
+			print('End of video stream, exiting...')
+			break
+
+		# display frame
+		cv.imshow(camera.window_name, frame)
+
+		if cv.waitKey(1) == ord('q'):
+			break
+
+	camera.print_camera_settings()
+	camera.vid.release()
+	cv.destroyAllWindows()
+
+if __name__ == "__main__":
+	main()

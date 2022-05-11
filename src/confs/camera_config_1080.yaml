@@ -15,3 +15,11 @@ brightness: 10
 contrast: 15
 
 saturation: 70
+
+x_frame:
+  - 100
+  - 1080
+
+y_frame:
+  - 390
+  - 1560
