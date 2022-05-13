@@ -6,123 +6,188 @@ from webcam import webcam
 
 from utils import *
 
+
 # bring in file vs webcam choice
 
-def detect_path(img: np.ndarray) -> np.ndarray:
-    """
-    Detects the path decal on the game board.
-    Returns:
-        * a contour found using np.findContours()
-        * if no matching contour found, returns None 
-    """
+class detector(object):
+    fast = None
 
-    gray = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
-    blur = cv.GaussianBlur(gray, (5, 5), 1)
+    def __init__(self, conf) -> None:
+        self.fast = cv.FastFeatureDetector_create(threshold=35)
+        self.fast.setNonmaxSuppression(0)
 
-    # # Method 1
-    # # adaptive = cv.adaptiveThreshold(blur, 255, cv.ADAPTIVE_THRESH_MEAN_C, cv.THRESH_BINARY, 13, 3)
-    # canny = cv.Canny(blur, 125, 175)
-    # contours, hierarchy = cv.findContours(canny, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_NONE)
+        # read frame size from config file
+        self.settings = read_yaml(conf)
+        self.height = self.settings['frame_height'][1] - self.settings['frame_height'][0]
+        self.width = self.settings['frame_width'][1] - self.settings['frame_width'][0]
+        print(f'frame width: {self.width} frame height: {self.height}')
 
-    # Method 2 (faster and more accurate)
-    ret, thresh = cv.threshold(blur, 170, 255, cv.THRESH_BINARY_INV)
-    contours, hierarchy = cv.findContours(thresh, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_NONE)
-    
-    # Draw contours whose centers are close to the expected center of the path
-    for cnt in contours:
+
+    def detect_path(self, img: np.ndarray) -> np.ndarray:
+        """
+        Detects the path decal on the game board.
+        Returns:
+            * a contour found using np.findContours()
+            * if no matching contour found, returns None 
+        """
+
+        gray = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
+        blur = cv.GaussianBlur(gray, (5, 5), 1)
+
+        # # Method 1
+        # # adaptive = cv.adaptiveThreshold(blur, 255, cv.ADAPTIVE_THRESH_MEAN_C, cv.THRESH_BINARY, 13, 3)
+        # canny = cv.Canny(blur, 125, 175)
+        # contours, hierarchy = cv.findContours(canny, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_NONE)
+
+        # Method 2 (faster and more accurate)
+        ret, thresh = cv.threshold(blur, 170, 255, cv.THRESH_BINARY_INV)
+        contours, hierarchy = cv.findContours(thresh, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_NONE)
         
-        # Calculate centroid of contour
-        M = cv.moments(cnt)
-        if M["m00"] != 0:
-            cX = int(M["m10"] / M["m00"])
-            cY = int(M["m01"] / M["m00"])
-        else:
-            cX, cY = -1, -1
+        # Draw contours whose centers are close to the expected center of the path
+        for cnt in contours:
+            
+            # Calculate centroid of contour
+            M = cv.moments(cnt)
+            if M["m00"] != 0:
+                cX = int(M["m10"] / M["m00"])
+                cY = int(M["m01"] / M["m00"])
+            else:
+                cX, cY = -1, -1
+            
+            # near_center = cX > 950 and cX < 970 and cY > 575 and cY < 600  # Used for non-cropped 1080p video
+            near_center = cX > 560 and cX < 580 and cY > 480 and cY < 500
+            if near_center and cv.arcLength(cnt, True) > 10_000:
+                print(cnt)
+                return cnt
+        return
+
+    def average_corner_keypoints(self, kp):
+        pts = cv.KeyPoint_convert(kp)
+        if len(pts) > 0:
+            a = np.array(pts)
+            a = np.average(a, axis=0)
+            a = np.around(a, decimals=0)
+            # print(a)
+            return a
+        return None
+
+    # use harris corners w/localized search to find maze corners
+    def find_maze_corner(self, src: np.ndarray):
+
+        # print(src.shape)
+        # h = src.shape[0]
+        # print(f'height: {src.shape[0]}')
+        # print(f'width: {src.shape[1]}')
+
+        # crop_frame(src, height_range, width_range)
+        # search for top left
+        tl_frame = crop_frame(src, (0, 100), (0, 100))
+        tl_corner = self.fast.detect(tl_frame, None)
+        tl_frame = cv.drawKeypoints(tl_frame, tl_corner, None, color=(255, 0, 0))
+        cv.imshow('top_left', tl_frame)
+        tl_corner = self.average_corner_keypoints(tl_corner)
+
+        # search for top right
+        tr_frame = crop_frame(src, (0, 100), (self.width - 100, self.width))
+        tr_corner = self.fast.detect(tr_frame, None)
+        tr_frame = cv.drawKeypoints(tr_frame, tr_corner, None, color=(255, 0, 0))
+        cv.imshow('top_right', tr_frame)
+        tr_corner = self.average_corner_keypoints(tr_corner)
+
+        # search for bot left
+        bl_frame = crop_frame(src, (self.height - 100, self.height), (0, 100))
+        bl_corner = self.fast.detect(bl_frame, None)
+        bl_frame = cv.drawKeypoints(bl_frame, bl_corner, None, color=(255, 0, 0))
+        cv.imshow('bot_left', bl_frame)
+        bl_corner = self.average_corner_keypoints(bl_corner)
+
+        # search for bot right
+        br_frame = crop_frame(src, (self.height - 100, self.height), (self.width - 120, self.width - 20))
+        br_corner = self.fast.detect(br_frame, None)
+        br_frame = cv.drawKeypoints(br_frame, br_corner, None, color=(255, 0, 0))
+        cv.imshow('bot_right', br_frame)
+        br_corner = self.average_corner_keypoints(br_corner)
+        # print(br_corner)
+
         
-        # near_center = cX > 950 and cX < 970 and cY > 575 and cY < 600  # Used for non-cropped 1080p video
-        near_center = cX > 560 and cX < 580 and cY > 480 and cY < 500
-        if near_center and cv.arcLength(cnt, True) > 10_000:
-            print(cnt)
-            return cnt
-    return
+        return (tl_corner, tr_corner, bl_corner, br_corner)
+        # return np.array([tl_corner, tr_corner, bl_corner, br_corner])
 
 
-def find_maze_corner(src: np.ndarray):
-    # search for top left
-
-    # search for top right
-    # search for bot left
-    # search for bot right
-    pass
-
-def perspective_transform(src: np.ndarray):
-    pass
-
-def erode_and_dilate(src: np.ndarray, kernel_size: int, iterations: int = 1) -> np.ndarray:
-    """ Performs a series of erosions followed by dilations on src image """
-    
-    erosion_kernel = np.ones((  kernel_size, kernel_size), np.uint8)
-    dilation_kernel = (         kernel_size, kernel_size)
-
-    while iterations:
-        eroded = cv.erode(src, erosion_kernel, iterations=1)
-        src = cv.dilate(eroded, dilation_kernel, iterations=1)
-        iterations -= 1
-
-    return src
+    # transform frame based on detected corners
+    def perspective_transform(self, src: np.ndarray, pts):
+        # tl, tr, bl, br
+        # [h, w]
+        dest_pts = np.array([[0, 0], [0, self.width], [self.height, 0], [self.height, self.width]])
+        matrix = cv.getPerspectiveTransform(pts, dest_pts)
+        result = cv.warpPerspective(src, matrix, (self.height, self.width))
+        return result
 
 
-def detect_blue_ball(src: np.ndarray) -> tuple:
-    """ 
-    Detects the blue ball in an image. 
-    Returns: 
-        * tuple (x, y, rad)
-        * if no ball detected, returns None
-    """
-    blur = cv.GaussianBlur(src, (7, 7), cv.BORDER_DEFAULT)
-    blue_channel = blur[:,:,0]
-    ret, green_mask = cv.threshold(blur[:,:,1], 50, 255, cv.THRESH_BINARY_INV)
-    ret, red_mask = cv.threshold(blur[:,:,2], 15, 255, cv.THRESH_BINARY_INV)
-    masked = cv.inRange(blue_channel, 20, 150)
-    no_green = cv.bitwise_and(masked, masked, mask=green_mask)
-    no_red = cv.bitwise_and(masked, masked, mask=red_mask)
-    no_green_red = cv.bitwise_and(no_green, no_green, mask=no_red)
+    def erode_and_dilate(self, src: np.ndarray, kernel_size: int, iterations: int = 1) -> np.ndarray:
+        """ Performs a series of erosions followed by dilations on src image """
+        
+        erosion_kernel = np.ones((  kernel_size, kernel_size), np.uint8)
+        dilation_kernel = (         kernel_size, kernel_size)
 
-    kernel = np.ones((3,3), np.uint8)
-    eroded_dilated = erode_and_dilate(no_green_red, 3)
-    # eroded_dilated = erode_and_dilate(no_green_red, 1)
+        while iterations:
+            eroded = cv.erode(src, erosion_kernel, iterations=1)
+            src = cv.dilate(eroded, dilation_kernel, iterations=1)
+            iterations -= 1
 
-    final_image = eroded_dilated
+        return src
 
-    # uncomment to see ball segmentation
-    cv.imshow('ball_mask', final_image)
 
-    # method 2: min enclosing circle
-    circles = []
-    contours, hierarchy = cv.findContours(eroded_dilated, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_NONE)
-    for c in contours:
-        (x,y), r = cv.minEnclosingCircle(c)
-        # reject contours that do not meet ball radius
-        if r > 15 and r < 30:
-            circles.append((x, y, r))
-            # print(f'x: {x} y: {y} r: {r}')
-            return [int(x), int(y), int(r)]
+    def detect_blue_ball(self, src: np.ndarray) -> tuple:
+        """ 
+        Detects the blue ball in an image. 
+        Returns: 
+            * tuple (x, y, rad)
+            * if no ball detected, returns None
+        """
+        blur = cv.GaussianBlur(src, (7, 7), cv.BORDER_DEFAULT)
+        blue_channel = blur[:,:,0]
+        ret, green_mask = cv.threshold(blur[:,:,1], 50, 255, cv.THRESH_BINARY_INV)
+        ret, red_mask = cv.threshold(blur[:,:,2], 15, 255, cv.THRESH_BINARY_INV)
+        masked = cv.inRange(blue_channel, 20, 150)
+        no_green = cv.bitwise_and(masked, masked, mask=green_mask)
+        no_red = cv.bitwise_and(masked, masked, mask=red_mask)
+        no_green_red = cv.bitwise_and(no_green, no_green, mask=no_red)
 
-    return None
+        kernel = np.ones((3,3), np.uint8)
+        eroded_dilated = self.erode_and_dilate(no_green_red, 5)
+        # eroded_dilated = erode_and_dilate(no_green_red, 1)
 
-    # Method 1: Hough Circles 
-    # circles = cv.HoughCircles(final_image, cv.HOUGH_GRADIENT, 1, 50, param1=30, param2=15, minRadius=2, maxRadius=50)
-    # if circles is not None:
-        # circles = np.uint16(np.around(circles))
-        # ball = circles[0,:][0]
-        # print(ball)
-        # return (
-            # ball[0],
-            # ball[1],
-            # ball[2]
-        # )
-    # else:
-        # return None
+        # uncomment to see ball segmentation
+        # cv.imshow('ball_mask', eroded_dilated)
+
+        # method 2: min enclosing circle
+        # circles = []
+        contours, hierarchy = cv.findContours(eroded_dilated, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_NONE)
+        for c in contours:
+            (x,y), r = cv.minEnclosingCircle(c)
+            # reject contours that do not meet ball radius
+            if r > 15 and r < 30:
+                # circles.append((x, y, r))
+                # print(f'x: {x} y: {y} r: {r}')
+                return [int(x), int(y), int(r)]
+
+        return None
+
+        # Method 1: Hough Circles 
+        # final_image = eroded_dilated
+        # circles = cv.HoughCircles(final_image, cv.HOUGH_GRADIENT, 1, 50, param1=30, param2=15, minRadius=2, maxRadius=50)
+        # if circles is not None:
+            # circles = np.uint16(np.around(circles))
+            # ball = circles[0,:][0]
+            # print(ball)
+            # return (
+                # ball[0],
+                # ball[1],
+                # ball[2]
+            # )
+        # else:
+            # return None
 
 
 def main():
@@ -134,6 +199,8 @@ def main():
     camera = webcam(conf)
     settings = read_yaml(conf)
     window_name = settings['window_name']
+
+    d = detector(conf)
 
 
     # Variables for recording detected object state
@@ -154,29 +221,33 @@ def main():
         frame_count += 1
 
         # Crop video frame to only desired area
-        frame = crop_frame(frame, settings['x_frame'], settings['y_frame'])
+        frame = crop_frame(frame, settings['frame_height'], settings['frame_width'])
+
+        # perspective transform
+        points = d.find_maze_corner(frame)
+        # frame = d.perspective_transform(frame, points)
 
 
         ### STEP 2: Detect objects
 
         ## 2.1: Path
         # Find current path outline/contour (only every 3rd frame)
-        if frame_count % 3 == 0:
-            new_path = detect_path(frame)
-            if new_path is not None:
-                path = new_path
+        # if frame_count % 3 == 0:
+        #     new_path = detect_path(frame)
+        #     if new_path is not None:
+        #         path = new_path
 
         ## 2.2: Ball
         # Find current ball position
         if ball_pos is None:    # If ball was not detected during last cycle, search entire video frame
-            ball_pos = detect_blue_ball(frame)
+            ball_pos = d.detect_blue_ball(frame)
         else:                   # If ball was detected last cycle, search only the area surrounding the most recently recorded ball position
             area_size = 100
             x_min_offset = min(0, ball_pos[0] - area_size)
             y_min_offset = min(0, ball_pos[1] - area_size)
             x_min, x_max = max(0, ball_pos[0] - area_size), ball_pos[0] + area_size
             y_min, y_max = max(0, ball_pos[1] - area_size), ball_pos[1] + area_size
-            new_ball_pos = detect_blue_ball(frame[y_min:y_max, x_min:x_max, :])
+            new_ball_pos = d.detect_blue_ball(frame[y_min:y_max, x_min:x_max, :])
             
             # If a ball was successfully detected near prior ball position, calculates new ball position from relative coordinates
             if new_ball_pos is not None:

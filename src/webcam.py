@@ -1,12 +1,11 @@
 import cv2 as cv
-import yaml
-import utils
+from utils import *
 
 class webcam():
 
 	def __init__(self, conf):
 		# read camera config yaml
-		self.settings = utils.read_yaml(conf)
+		self.settings = read_yaml(conf)
 
 		# init camera capture
 		self.vid = cv.VideoCapture(self.settings['camera_id'])
@@ -77,7 +76,7 @@ class webcam():
 def main():
 
 	# create a camera object with the given config
-	conf = utils.config_files['camera_1080']
+	conf = config_files['camera_1080']
 	camera = webcam(conf)
 
 	while True:

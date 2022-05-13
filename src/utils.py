@@ -44,20 +44,27 @@ config_files = {
     "serial": f'{config_prefix}/serial.yaml'
 }
 
-
+# read in yaml config 
 def read_yaml(conf):
     settings = None
     with open(conf, 'r') as file:
         settings = yaml.safe_load(file)
     return settings
 
-def crop_frame(frame, x_frame, y_frame):
-    return frame[x_frame[0]:x_frame[1], y_frame[0]:y_frame[1], :]
+# crop frame based on camera config file
+def crop_frame(frame, height, width):
+    return frame[height[0]:height[1], width[0]:width[1], :]
+
+# error calculation: (delta_x, delta_y)
+def ball_error(ball_pos, target) -> tuple:
+    return (target[0] - ball_pos[0], target[1] - ball_pos[1])
+
+def at_target(error, range):
+    return (abs(error[0]) < range and abs(error[1]) < range)
 
 # cv functions
 def draw_text(img: np.ndarray, text:str, position: tuple, BGR_color: tuple) -> None:
     """ Draws text of color BGR_color to img at position """
-
     new_img = cv.putText(img, text, position, cv.FONT_HERSHEY_SIMPLEX, 2, BGR_color, 3)
     img = new_img
 
@@ -65,13 +72,10 @@ def draw_text(img: np.ndarray, text:str, position: tuple, BGR_color: tuple) -> N
 def draw_circles(img: np.ndarray, circles: list, num: int = -1, BGR_color: tuple = (0, 0, 255)) -> None:
     """ Draws output from cv.HoughCircles onto img """
 
-    circle_rad = 25
-
     if num == -1:
         num = len(circles)
 
     for c in circles[:num]:
-        cv.circle(img, (c[0],c[1]), circle_rad, BGR_color, 3)   # Draw circle
+        cv.circle(img, (c[0],c[1]), c[2], BGR_color, 3)   # Draw circle
         cv.circle(img, (c[0],c[1]), 2, BGR_color, 3)   # Draw dot at circle's center
-
     return

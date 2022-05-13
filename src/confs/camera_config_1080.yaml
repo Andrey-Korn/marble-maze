@@ -14,12 +14,12 @@ brightness: 10
 
 contrast: 15
 
-saturation: 70
+saturation: 75
 
-x_frame:
-  - 100
+frame_height:
+  - 80
   - 1080
 
-y_frame:
-  - 390
-  - 1560
+frame_width:
+  - 360
+  - 1600

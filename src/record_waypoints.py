@@ -2,19 +2,17 @@
 # show chosen points, then all to file
 
 import cv2 as cv
-import utils
+from utils import *
 from webcam import webcam
-import yaml
 import json
 
 class recorder(object):
 
     points = []
-
     def __init__(self, conf) -> None:
         # configure webcam
         self.camera = webcam(conf)
-        self.settings = utils.read_yaml(conf)
+        self.settings = read_yaml(conf)
         self.window_name = self.settings['window_name']
 
     # return frame from webcam object
@@ -24,7 +22,7 @@ class recorder(object):
     def mouse_event(self, event, x, y, flags, param):
         if event == cv.EVENT_LBUTTONDOWN:
             print(f'{x} : {y}')
-            self.append_point((x, y))
+            self.append_point((x, y, 25))
 
         # if event == cv.EVENT_RBUTTONDOWN:
         if event == cv.EVENT_MBUTTONDOWN:
@@ -41,12 +39,12 @@ class recorder(object):
 
     # draw circles where points were placed
     def display_points(self, frame):
-        utils.draw_circles(frame, self.points, BGR_color=utils.color_map["brightorange"])
+        draw_circles(frame, self.points, BGR_color=color_map["brightorange"])
         
 
     def update(self):
         ret, frame = self.grab_frame()
-        frame = utils.crop_frame(frame, self.settings['x_frame'], self.settings['y_frame'])
+        frame = crop_frame(frame, self.settings['frame_height'], self.settings['frame_width'])
 
         if not ret:
             return False
@@ -63,7 +61,7 @@ class recorder(object):
 def main():
 
     # create recorder
-    config_file = utils.config_files['camera_1080']
+    config_file = config_files['camera_1080']
     r = recorder(config_file)
 
     # setup mouse events
