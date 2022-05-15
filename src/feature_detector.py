@@ -3,6 +3,7 @@ import cv2 as cv
 import numpy as np
 from numpy.lib import utils
 from webcam import webcam
+from timeit import default_timer as timer
 
 from utils import *
 
@@ -13,14 +14,16 @@ class detector(object):
     fast = None
 
     def __init__(self, conf) -> None:
-        self.fast = cv.FastFeatureDetector_create(threshold=35)
-        self.fast.setNonmaxSuppression(0)
 
         # read frame size from config file
         self.settings = read_yaml(conf)
         self.height = self.settings['frame_height'][1] - self.settings['frame_height'][0]
         self.width = self.settings['frame_width'][1] - self.settings['frame_width'][0]
         print(f'frame width: {self.width} frame height: {self.height}')
+
+        # setup fast corner detection
+        self.fast = cv.FastFeatureDetector_create(threshold=self.settings['fast_thresh'][0])
+        self.fast.setNonmaxSuppression(0)
 
 
     def detect_path(self, img: np.ndarray) -> np.ndarray:
@@ -62,13 +65,15 @@ class detector(object):
         return
 
     def average_corner_keypoints(self, kp):
+        
         pts = cv.KeyPoint_convert(kp)
         if len(pts) > 0:
             a = np.array(pts)
             a = np.average(a, axis=0)
             a = np.around(a, decimals=0)
             # print(a)
-            return a
+            return a.astype(int)
+        # return np.array[0, 0]
         return None
 
     # use harris corners w/localized search to find maze corners
@@ -86,6 +91,8 @@ class detector(object):
         tl_frame = cv.drawKeypoints(tl_frame, tl_corner, None, color=(255, 0, 0))
         cv.imshow('top_left', tl_frame)
         tl_corner = self.average_corner_keypoints(tl_corner)
+        tl_corner = (tl_corner[0], tl_corner[1])
+        print(tl_corner)
 
         # search for top right
         tr_frame = crop_frame(src, (0, 100), (self.width - 100, self.width))
@@ -93,6 +100,8 @@ class detector(object):
         tr_frame = cv.drawKeypoints(tr_frame, tr_corner, None, color=(255, 0, 0))
         cv.imshow('top_right', tr_frame)
         tr_corner = self.average_corner_keypoints(tr_corner)
+        tr_corner = (tr_corner[0], (self.width - 100) + tr_corner[1])
+        # print(tr_corner)
 
         # search for bot left
         bl_frame = crop_frame(src, (self.height - 100, self.height), (0, 100))
@@ -100,6 +109,8 @@ class detector(object):
         bl_frame = cv.drawKeypoints(bl_frame, bl_corner, None, color=(255, 0, 0))
         cv.imshow('bot_left', bl_frame)
         bl_corner = self.average_corner_keypoints(bl_corner)
+        bl_corner = (bl_corner[0], bl_corner[1])
+        # print(bl_corner)
 
         # search for bot right
         br_frame = crop_frame(src, (self.height - 100, self.height), (self.width - 120, self.width - 20))
@@ -107,11 +118,13 @@ class detector(object):
         br_frame = cv.drawKeypoints(br_frame, br_corner, None, color=(255, 0, 0))
         cv.imshow('bot_right', br_frame)
         br_corner = self.average_corner_keypoints(br_corner)
+        br_corner = (br_corner[0], br_corner[1])
         # print(br_corner)
 
         
-        return (tl_corner, tr_corner, bl_corner, br_corner)
-        # return np.array([tl_corner, tr_corner, bl_corner, br_corner])
+        # return [tl_corner, tr_corner, bl_corner, br_corner]
+        # return (tl_corner, tr_corner, bl_corner, br_corner)
+        return np.array([tl_corner, tr_corner, bl_corner, br_corner])
 
 
     # transform frame based on detected corners
@@ -119,6 +132,8 @@ class detector(object):
         # tl, tr, bl, br
         # [h, w]
         dest_pts = np.array([[0, 0], [0, self.width], [self.height, 0], [self.height, self.width]])
+        # print(pts)
+        # print(dest_pts)
         matrix = cv.getPerspectiveTransform(pts, dest_pts)
         result = cv.warpPerspective(src, matrix, (self.height, self.width))
         return result
@@ -167,7 +182,7 @@ class detector(object):
         for c in contours:
             (x,y), r = cv.minEnclosingCircle(c)
             # reject contours that do not meet ball radius
-            if r > 15 and r < 30:
+            if r > self.settings['ball_radius'][0] and r < self.settings['ball_radius'][1]:
                 # circles.append((x, y, r))
                 # print(f'x: {x} y: {y} r: {r}')
                 return [int(x), int(y), int(r)]
@@ -189,6 +204,12 @@ class detector(object):
         # else:
             # return None
 
+# timer vars
+frame_time = 0
+start = 0
+end = 0
+elapsed_time = 0
+calc_time = 0
 
 def main():
     # Open video feed/file
@@ -213,12 +234,15 @@ def main():
     # Main loop - object detection and labeling for each video frame
     while camera.vid.isOpened():
 
+        frame_time = timer()
         ### Step 1: Get video frame
         ret, frame = camera.read_frame()
         if not ret:
             print("Error: video frame not loaded.")
             break
         frame_count += 1
+
+        start = timer()
 
         # Crop video frame to only desired area
         frame = crop_frame(frame, settings['frame_height'], settings['frame_width'])
@@ -263,6 +287,8 @@ def main():
         if ball_pos is None:
             missed_frames_ball += 1
 
+        end = timer()
+
 
         ### STEP 3: Draw detected objects and message text to video frame
         
@@ -278,6 +304,15 @@ def main():
         else:
             msg, msg_color = "Ball NOT detected", "red"
         draw_text(frame, msg, (100, 100), color_map[msg_color])
+
+        elapsed_time = np.around(1000 * (end - frame_time), decimals=1)
+        calc_time = np.around(1000 * (end - start), decimals=1)
+
+        # draw frame time
+        draw_text(frame, f'rtt: {elapsed_time} ms', (700, 800), color_map["cyan"])
+        draw_text(frame, f'calc t: {calc_time} ms', (700, 900), color_map["cyan"])
+
+        # print(elapsed_time)
 
 
         ### Step 4: Display video on screen
