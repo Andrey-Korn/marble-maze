@@ -23,3 +23,7 @@ frame_height:
 frame_width:
   - 360
   - 1600
+
+ball_radius:
+  - 20
+  - 28

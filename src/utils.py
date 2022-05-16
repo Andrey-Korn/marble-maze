@@ -1,6 +1,7 @@
 import cv2 as cv
 import numpy as np
 import yaml
+import argparse
 
 # Maps example videos to paths
 vid_prefix = "../videos"
@@ -41,8 +42,27 @@ config_prefix = 'confs'
 config_files = {
     "camera_1080": f'{config_prefix}/camera_config_1080.yaml',
     "camera_720": f'{config_prefix}/camera_config_720.yaml',
-    "serial": f'{config_prefix}/serial.yaml'
+    "serial": f'{config_prefix}/serial.yaml',
+    "easy": f'{config_prefix}/maze_easy.yaml',
+    "med": f'{config_prefix}/maze_med.yaml',
+    "hard": f'{config_prefix}/maze_hard.yaml'
 }
+
+def setup_arg_parser(desc, maze_req=True):
+    parser = argparse.ArgumentParser(description=desc)
+    # get maze config
+    parser.add_argument('-m', '--maze', type=int, required=True, nargs=1, 
+                        help='specify maze board: (1) easy (2) medium (3) hard')
+
+    # get camera config
+    parser.add_argument('-c', '--camera', type=str, nargs=1,
+                        help='camera config file')
+
+    args = parser.parse_args()
+    if args.camera == None:
+        args.camera = config_files['camera_1080']
+    print(args)
+    return args
 
 # read in yaml config 
 def read_yaml(conf):

@@ -13,7 +13,7 @@ from utils import *
 class detector(object):
     fast = None
 
-    def __init__(self, conf) -> None:
+    def __init__(self, conf, ) -> None:
 
         # read frame size from config file
         self.settings = read_yaml(conf)
@@ -22,7 +22,7 @@ class detector(object):
         print(f'frame width: {self.width} frame height: {self.height}')
 
         # setup fast corner detection
-        self.fast = cv.FastFeatureDetector_create(threshold=self.settings['fast_thresh'][0])
+        self.fast = cv.FastFeatureDetector_create(threshold=30)
         self.fast.setNonmaxSuppression(0)
 
 
@@ -76,13 +76,17 @@ class detector(object):
         # return np.array[0, 0]
         return None
 
-    # use harris corners w/localized search to find maze corners
+    # use FAST feature decection w/localized search to find maze corners
     def find_maze_corner(self, src: np.ndarray):
 
-        # print(src.shape)
-        # h = src.shape[0]
         # print(f'height: {src.shape[0]}')
         # print(f'width: {src.shape[1]}')
+
+        # process for each corner
+        #   crop the frame to a small window, large enough to always see the corner
+        #   use FAST corner detect, with desired threshold value from maze config 
+        #   take average of points found, to come of with corner estimation in px
+        #   o.w. use arbitrary point or prev point
 
         # crop_frame(src, height_range, width_range)
         # search for top left
@@ -91,8 +95,11 @@ class detector(object):
         tl_frame = cv.drawKeypoints(tl_frame, tl_corner, None, color=(255, 0, 0))
         cv.imshow('top_left', tl_frame)
         tl_corner = self.average_corner_keypoints(tl_corner)
-        tl_corner = (tl_corner[0], tl_corner[1])
-        print(tl_corner)
+        if tl_corner is not None:
+            tl_corner = (tl_corner[0], tl_corner[1])
+        else:
+            tl_corner = (0, 0)
+        # print(tl_corner)
 
         # search for top right
         tr_frame = crop_frame(src, (0, 100), (self.width - 100, self.width))
@@ -100,7 +107,10 @@ class detector(object):
         tr_frame = cv.drawKeypoints(tr_frame, tr_corner, None, color=(255, 0, 0))
         cv.imshow('top_right', tr_frame)
         tr_corner = self.average_corner_keypoints(tr_corner)
-        tr_corner = (tr_corner[0], (self.width - 100) + tr_corner[1])
+        if tr_corner is not None:
+            tr_corner = (tr_corner[0], (self.width - 100) + tr_corner[1])
+        else:
+            tr_corner = (0, self.width)
         # print(tr_corner)
 
         # search for bot left
@@ -109,7 +119,10 @@ class detector(object):
         bl_frame = cv.drawKeypoints(bl_frame, bl_corner, None, color=(255, 0, 0))
         cv.imshow('bot_left', bl_frame)
         bl_corner = self.average_corner_keypoints(bl_corner)
-        bl_corner = (bl_corner[0], bl_corner[1])
+        if bl_corner is not None:
+            bl_corner = ((self.height - 100) + bl_corner[0], bl_corner[1])
+        else:
+            bl_corner = (self.height, 0)
         # print(bl_corner)
 
         # search for bot right
@@ -118,7 +131,10 @@ class detector(object):
         br_frame = cv.drawKeypoints(br_frame, br_corner, None, color=(255, 0, 0))
         cv.imshow('bot_right', br_frame)
         br_corner = self.average_corner_keypoints(br_corner)
-        br_corner = (br_corner[0], br_corner[1])
+        if br_corner is not None:
+            br_corner = (br_corner[0], br_corner[1])
+        else:
+            br_corner = (self.height, self.width)
         # print(br_corner)
 
         
@@ -212,15 +228,17 @@ elapsed_time = 0
 calc_time = 0
 
 def main():
+    script_desc = 'Display feature detection to screen'
+    args = setup_arg_parser(script_desc)
     # Open video feed/file
     video_path = video_path_map["blue_bright"]
-    # cap = cv.VideoCapture(video_path)
-    # cap = cv.VideoCapture()
-    conf = config_files['camera_1080']
+    conf = args.camera
+    # conf = config_files['camera_1080']
     camera = webcam(conf)
     settings = read_yaml(conf)
+    # maze_conf = read_yaml(args.maze[0])
     window_name = settings['window_name']
-
+ 
     d = detector(conf)
 
 

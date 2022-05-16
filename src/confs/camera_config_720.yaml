@@ -14,4 +14,16 @@ brightness: 10
 
 contrast: 15
 
-saturation: 30
+saturation: 75
+
+# frame_height: 
+#   - 10
+#   - 400
+
+# frame_width:
+#   - 10
+#   - 700
+
+# ball_radius:
+#   - 10
+#   - 20
