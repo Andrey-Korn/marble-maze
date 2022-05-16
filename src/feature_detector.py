@@ -13,6 +13,12 @@ from utils import *
 class detector(object):
     fast = None
 
+    # previous corner values
+    prev_tl = None 
+    prev_tr = None
+    prev_bl = None
+    prev_br = None
+
     def __init__(self, conf, ) -> None:
 
         # read frame size from config file
@@ -22,8 +28,14 @@ class detector(object):
         print(f'frame width: {self.width} frame height: {self.height}')
 
         # setup fast corner detection
-        self.fast = cv.FastFeatureDetector_create(threshold=30)
+        self.fast = cv.FastFeatureDetector_create(threshold=35)
         self.fast.setNonmaxSuppression(0)
+        
+        # set initial points to use as a corner estimation
+        self.prev_tl = (0, 0)
+        self.prev_tr = (0, self.width)
+        self.prev_bl = (self.height, 0)
+        self.prev_br = (self.height, self.width)
 
 
     def detect_path(self, img: np.ndarray) -> np.ndarray:
@@ -79,9 +91,6 @@ class detector(object):
     # use FAST feature decection w/localized search to find maze corners
     def find_maze_corner(self, src: np.ndarray):
 
-        # print(f'height: {src.shape[0]}')
-        # print(f'width: {src.shape[1]}')
-
         # process for each corner
         #   crop the frame to a small window, large enough to always see the corner
         #   use FAST corner detect, with desired threshold value from maze config 
@@ -97,8 +106,9 @@ class detector(object):
         tl_corner = self.average_corner_keypoints(tl_corner)
         if tl_corner is not None:
             tl_corner = (tl_corner[0], tl_corner[1])
+            self.prev_tl = tl_corner
         else:
-            tl_corner = (0, 0)
+            tl_corner = self.prev_tl 
         # print(tl_corner)
 
         # search for top right
@@ -109,8 +119,10 @@ class detector(object):
         tr_corner = self.average_corner_keypoints(tr_corner)
         if tr_corner is not None:
             tr_corner = (tr_corner[0], (self.width - 100) + tr_corner[1])
+            self.prev_tr = tr_corner
         else:
-            tr_corner = (0, self.width)
+            tr_corner = self.prev_tr
+            
         # print(tr_corner)
 
         # search for bot left
@@ -121,37 +133,40 @@ class detector(object):
         bl_corner = self.average_corner_keypoints(bl_corner)
         if bl_corner is not None:
             bl_corner = ((self.height - 100) + bl_corner[0], bl_corner[1])
+            self.prev_bl = bl_corner
         else:
-            bl_corner = (self.height, 0)
+            # bl_corner = (self.height, 0)
+            bl_corner = self.prev_bl
         # print(bl_corner)
 
         # search for bot right
-        br_frame = crop_frame(src, (self.height - 100, self.height), (self.width - 120, self.width - 20))
+        br_frame = crop_frame(src, (self.height - 100, self.height), (self.width - 120, self.width))
         br_corner = self.fast.detect(br_frame, None)
         br_frame = cv.drawKeypoints(br_frame, br_corner, None, color=(255, 0, 0))
         cv.imshow('bot_right', br_frame)
         br_corner = self.average_corner_keypoints(br_corner)
         if br_corner is not None:
-            br_corner = (br_corner[0], br_corner[1])
+            br_corner = ((self.height - 100) + br_corner[0], (self.width - 120) + br_corner[1])
+            self.prev_br
         else:
-            br_corner = (self.height, self.width)
+            # br_corner = (self.height, self.width)
+            br_corner = self.prev_br
         # print(br_corner)
 
         
         # return [tl_corner, tr_corner, bl_corner, br_corner]
-        # return (tl_corner, tr_corner, bl_corner, br_corner)
-        return np.array([tl_corner, tr_corner, bl_corner, br_corner])
+        return np.array([tl_corner, tr_corner, bl_corner, br_corner], np.float32)
 
 
     # transform frame based on detected corners
     def perspective_transform(self, src: np.ndarray, pts):
         # tl, tr, bl, br
         # [h, w]
-        dest_pts = np.array([[0, 0], [0, self.width], [self.height, 0], [self.height, self.width]])
-        # print(pts)
-        # print(dest_pts)
+        dest_pts = np.array([[0, 0], [0, self.width], [self.height, 0], [self.height, self.width]], np.float32)
+        print(pts)
+        print(dest_pts)
         matrix = cv.getPerspectiveTransform(pts, dest_pts)
-        result = cv.warpPerspective(src, matrix, (self.height, self.width))
+        result = cv.warpPerspective(src, matrix, (self.width, self.height))
         return result
 
 
@@ -267,7 +282,8 @@ def main():
 
         # perspective transform
         points = d.find_maze_corner(frame)
-        # frame = d.perspective_transform(frame, points)
+        # print(points)
+        frame = d.perspective_transform(frame, points)
 
 
         ### STEP 2: Detect objects
