@@ -61,6 +61,16 @@ def setup_arg_parser(desc, maze_req=True):
     args = parser.parse_args()
     if args.camera == None:
         args.camera = config_files['camera_1080']
+
+    if args.maze[0] == 1:
+        args.maze = config_files['easy']
+    elif args.maze[0] == 2:
+        args.maze = config_files['med']
+    elif args.maze[0] == 3:
+        args.maze = config_files['hard']
+    else:
+        print('not a valid maze board #!')
+        quit()
     print(args)
     return args
 

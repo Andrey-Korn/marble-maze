@@ -10,8 +10,8 @@ from utils import *
 # bring in file vs webcam choice
 
 class detector(object):
+    # corner detector
     fast = None
-    corner_window = 10
 
     # previous corner values
     prev_tl = None 
@@ -19,10 +19,18 @@ class detector(object):
     prev_bl = None
     prev_br = None
 
-    def __init__(self, conf, ) -> None:
+    # detected objects
+    path, ball_pos = None, None
+
+    # For calculating statistics (object detection accuracy, framerate)
+    frame_count = 0
+    missed_frames_ball = 0
+
+    def __init__(self, vid_settings, maze_settings) -> None:
 
         # read frame size from config file
-        self.settings = read_yaml(conf)
+        # self.settings = read_yaml(conf)
+        self.settings = vid_settings
         self.height = self.settings['frame_height'][1] - self.settings['frame_height'][0]
         self.width = self.settings['frame_width'][1] - self.settings['frame_width'][0]
         print(f'frame width: {self.width} frame height: {self.height}')
@@ -91,7 +99,7 @@ class detector(object):
             h = np.median(a[:,0], axis=0)
             w = np.median(a[:,1], axis=0)
             median = np.array([h, w]).astype(int)
-            print(f'median\n-------\n{median}\n')
+            print(f'median: {median}')
 
             remove_idxs = []
             i = 0
@@ -140,7 +148,7 @@ class detector(object):
 
         # search for top right
         print('\n-----------------------\nTOP RIGHT\n-----------------------\n')
-        tr_frame = crop_frame(src, (0, 150), (self.width - 150, self.width))
+        tr_frame = crop_frame(src, (0, 100), (self.width - 150, self.width))
         tr_corner = self.fast.detect(tr_frame, None)
         tr_frame = cv.drawKeypoints(tr_frame, tr_corner, None, color=(255, 0, 0))
         cv.imshow('top_right', tr_frame)
@@ -188,8 +196,8 @@ class detector(object):
         # tl, tr, bl, br
         # [h, w]
         dest_pts = np.array([[0, 0], [0, self.width], [self.height, 0], [self.height, self.width]], np.float32)
-        # print(pts)
-        # print(dest_pts)
+        print(pts)
+        print(dest_pts)
         matrix = cv.getPerspectiveTransform(pts, dest_pts)
         result = cv.warpPerspective(src, matrix, (self.width, self.height))
         return result
@@ -230,7 +238,7 @@ class detector(object):
         # eroded_dilated = erode_and_dilate(no_green_red, 1)
 
         # uncomment to see ball segmentation
-        # cv.imshow('ball_mask', eroded_dilated)
+        cv.imshow('ball_mask', eroded_dilated)
 
         # method 2: min enclosing circle
         # circles = []
@@ -260,6 +268,79 @@ class detector(object):
         # else:
             # return None
 
+    def crop_no_transform(self, frame):
+        frame = crop_frame(frame, self.settings['frame_height'], self.settings['frame_width'])
+        return frame
+
+    def crop_and_transform(self, frame):
+        # Crop video frame to only desired area
+        frame = crop_frame(frame, self.settings['frame_height'], self.settings['frame_width'])
+
+        # perspective transform
+        points = self.find_maze_corner(frame)
+        frame = self.perspective_transform(frame, points)
+        return frame
+
+    def detect_objects(self, frame):
+        ## Path
+        # Find current path outline/contour (only every 3rd frame)
+        # if frame_count % 3 == 0:
+        #     new_path = detect_path(frame)
+        #     if new_path is not None:
+        #         path = new_path
+
+        ## Ball
+        # Find current ball position
+        if self.ball_pos is None:    # If ball was not detected during last cycle, search entire video frame
+            self.ball_pos = self.detect_blue_ball(frame)
+        else:                   # If ball was detected last cycle, search only the area surrounding the most recently recorded ball position
+            area_size = 100
+            x_min_offset = min(0, self.ball_pos[0] - area_size)
+            y_min_offset = min(0, self.ball_pos[1] - area_size)
+            x_min, x_max = max(0, self.ball_pos[0] - area_size), self.ball_pos[0] + area_size
+            y_min, y_max = max(0, self.ball_pos[1] - area_size), self.ball_pos[1] + area_size
+            new_ball_pos = self.detect_blue_ball(frame[y_min:y_max, x_min:x_max, :])
+            
+            # If a ball was successfully detected near prior ball position, calculates new ball position from relative coordinates
+            if new_ball_pos is not None:
+                new_ball_pos = (
+                    max(0, new_ball_pos[0] + self.ball_pos[0] - area_size - x_min_offset), 
+                    max(0, new_ball_pos[1] + self.ball_pos[1] - area_size - y_min_offset),
+                    new_ball_pos[2]
+                )
+            self.ball_pos = new_ball_pos
+
+        # If ball not found during this cycle, tally a detection failure 
+        if self.ball_pos is None:
+            self.missed_frames_ball += 1
+
+
+    def annotate_frame(self, frame, start, end, frame_time):
+        # Draw path
+        if self.path is not None:
+            cv.drawContours(frame, self.path, -1, color_map["orange"], 2)
+
+        # Draw ball position and message text
+        if self.ball_pos is not None:
+            msg, msg_color = "Ball detected", "green"
+            draw_circles(frame, [self.ball_pos], BGR_color=color_map["magenta"])
+            draw_text(frame, f"Position (X, Y): {self.ball_pos[0]}, {self.ball_pos[1]}", (100, 200), color_map["green"])
+        else:
+            msg, msg_color = "Ball NOT detected", "red"
+        draw_text(frame, msg, (100, 100), color_map[msg_color])
+
+        elapsed_time = np.around(1000 * (end - frame_time), decimals=1)
+        calc_time = np.around(1000 * (end - start), decimals=1)
+        fps = np.around(1.0 / (end - frame_time), decimals=1)
+
+        # draw frame time
+        draw_text(frame, f'rtt: {elapsed_time} ms', (700, 750), color_map["cyan"])
+        draw_text(frame, f'calc t: {calc_time} ms', (700, 850), color_map["cyan"])
+        draw_text(frame, f'FPS: {fps}', (700, 950), color_map["cyan"])
+
+        return frame
+
+
 # timer vars
 frame_time = 0
 start = 0
@@ -270,122 +351,56 @@ calc_time = 0
 def main():
     script_desc = 'Display feature detection to screen'
     args = setup_arg_parser(script_desc)
-    # Open video feed/file
-    video_path = video_path_map["blue_bright"]
-    conf = args.camera
-    # conf = config_files['camera_1080']
-    camera = webcam(conf)
-    settings = read_yaml(conf)
-    # maze_conf = read_yaml(args.maze[0])
-    window_name = settings['window_name']
+    vid_conf = args.camera
+    maze_conf = args.maze
+    camera = webcam(vid_conf)
+    vid_settings = read_yaml(vid_conf)
+    maze_settings = read_yaml(maze_conf)
+    window_name = vid_settings['window_name']
  
-    d = detector(conf)
-
-
-    # Variables for recording detected object state
-    path, ball_pos = None, None
-
-    # For calculating statistics (object detection accuracy, framerate)
-    frame_count = 0
-    missed_frames_ball = 0
+    d = detector(vid_settings, maze_settings)
 
     # Main loop - object detection and labeling for each video frame
-    while camera.vid.isOpened():
+    while True:
+        frame_time = timer() # time from when frame was taken
 
-        frame_time = timer()
         ### Step 1: Get video frame
         ret, frame = camera.read_frame()
         if not ret:
             print("Error: video frame not loaded.")
             break
-        frame_count += 1
+        d.frame_count += 1
 
-        start = timer()
-
-        # Crop video frame to only desired area
-        frame = crop_frame(frame, settings['frame_height'], settings['frame_width'])
-
-        # perspective transform
-        points = d.find_maze_corner(frame)
-        frame = d.perspective_transform(frame, points)
+        start = timer() # time at which frame was ready
 
 
-        ### STEP 2: Detect objects
+        ### Step 2: crop and transform to get final maze image
+        # frame = d.crop_and_transform(frame)
+        frame = d.crop_no_transform(frame)
 
-        ## 2.1: Path
-        # Find current path outline/contour (only every 3rd frame)
-        # if frame_count % 3 == 0:
-        #     new_path = detect_path(frame)
-        #     if new_path is not None:
-        #         path = new_path
+        ### Step 3: detect objects
+        d.detect_objects(frame)
 
-        ## 2.2: Ball
-        # Find current ball position
-        if ball_pos is None:    # If ball was not detected during last cycle, search entire video frame
-            ball_pos = d.detect_blue_ball(frame)
-        else:                   # If ball was detected last cycle, search only the area surrounding the most recently recorded ball position
-            area_size = 100
-            x_min_offset = min(0, ball_pos[0] - area_size)
-            y_min_offset = min(0, ball_pos[1] - area_size)
-            x_min, x_max = max(0, ball_pos[0] - area_size), ball_pos[0] + area_size
-            y_min, y_max = max(0, ball_pos[1] - area_size), ball_pos[1] + area_size
-            new_ball_pos = d.detect_blue_ball(frame[y_min:y_max, x_min:x_max, :])
-            
-            # If a ball was successfully detected near prior ball position, calculates new ball position from relative coordinates
-            if new_ball_pos is not None:
-                new_ball_pos = (
-                    max(0, new_ball_pos[0] + ball_pos[0] - area_size - x_min_offset), 
-                    max(0, new_ball_pos[1] + ball_pos[1] - area_size - y_min_offset),
-                    new_ball_pos[2]
-                )
-            ball_pos = new_ball_pos
+        end = timer() # time after all calculation were completed
 
-        # If ball not found during this cycle, tally a detection failure (currently stops at frame 769, as this is when the ball falls into a hole in the training video)
-        # if ball_pos is None and frame_count < 769:
-        if ball_pos is None:
-            missed_frames_ball += 1
+        ### Step 4: Draw detected objects and message text to video frame
+        frame = d.annotate_frame(frame, start, end, frame_time)
 
-        end = timer()
-
-
-        ### STEP 3: Draw detected objects and message text to video frame
-        
-        # Draw path
-        if path is not None:
-            cv.drawContours(frame, path, -1, color_map["orange"], 2)
-
-        # Draw ball position and message text
-        if ball_pos is not None:
-            msg, msg_color = "Ball detected", "green"
-            draw_circles(frame, [ball_pos], BGR_color=color_map["magenta"])
-            draw_text(frame, f"Position (X, Y): {ball_pos[0]}, {ball_pos[1]}", (100, 200), color_map["green"])
-        else:
-            msg, msg_color = "Ball NOT detected", "red"
-        draw_text(frame, msg, (100, 100), color_map[msg_color])
-
-        elapsed_time = np.around(1000 * (end - frame_time), decimals=1)
-        calc_time = np.around(1000 * (end - start), decimals=1)
-
-        # draw frame time
-        draw_text(frame, f'rtt: {elapsed_time} ms', (700, 800), color_map["cyan"])
-        draw_text(frame, f'calc t: {calc_time} ms', (700, 900), color_map["cyan"])
-
-        # print(elapsed_time)
-
-
-        ### Step 4: Display video on screen
+        ### Step 5: Display video on screen
         cv.imshow(window_name, frame)
         
-        ### Step 5: Check for exit command
+        ### Step 6: Check for exit command
         if cv.waitKey(1) == ord('q'):
             break
 
+    # clean up
     camera.vid.release()
     cv.destroyAllWindows()
 
     # Print statistics to terminal
-    print(f"Number of frames where ball was missed: {missed_frames_ball}")
-    print(f"Ball detection rate: {np.around((1 - missed_frames_ball / frame_count), decimals=4) * 100}%")
+    print(f'frames captured: {d.frame_count}')
+    print(f"Number of frames where ball was missed: {d.missed_frames_ball}")
+    print(f"Ball detection rate: {np.around((1 - d.missed_frames_ball / d.frame_count), decimals=4) * 100}%")
 
 
 if __name__ == "__main__":
