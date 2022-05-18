@@ -3,6 +3,7 @@
 import serial
 import yaml
 from utils import *
+import time
 
 class motor_interface(object):
     esp32 = None
@@ -11,7 +12,6 @@ class motor_interface(object):
     motor_on = '1'
     motor_off = '0'
     conf_file = config_files['serial']
-    # config_file = 'confs/serial.yaml'
     conn_settings = None
     port = None
     baud = None
@@ -39,3 +39,22 @@ class motor_interface(object):
     def set_angle(self, new_target):
         self.target = new_target
         self.angle_string = f'<{self.target[0]},{self.target[1]}>'
+
+
+
+test_angles = [ [0, 0], [1, 0], [-1, 0], [0, 1], [0, -1] ]
+
+# test motor control by cycling through some target values
+def main():
+    controller = motor_interface()
+    while True:
+        for a in test_angles:
+            controller.set_angle(a)
+            # print(a)
+            print(controller.angle_string)
+            controller.send_angle()
+            time.sleep(2)
+
+
+if __name__ == "__main__":
+    main()
