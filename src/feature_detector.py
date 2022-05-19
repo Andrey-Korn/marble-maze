@@ -56,6 +56,7 @@ class detector(object):
         self.text_tl = (self.settings['text_tl'][0], self.settings['text_tl'][1])
         self.text_tr = (self.settings['text_tr'][0], self.settings['text_tr'][1])
         self.text_spacing = self.settings['text_spacing']
+        self.text_size = self.settings['text_size']
 
 
     def detect_path(self, img: np.ndarray) -> np.ndarray:
@@ -337,7 +338,7 @@ class detector(object):
             annotate_point(frame, f'{self.ball_pos[0]},{self.ball_pos[1]}', self.ball_pos, color_map['magenta'])
         else:
             msg, msg_color = "Ball NOT detected", "red"
-        draw_text(frame, msg, self.text_tl, color_map[msg_color])
+        draw_text(frame, msg, self.text_tl, color_map[msg_color], font_size=self.text_size)
 
 
 # timer vars
@@ -384,7 +385,7 @@ def main():
 
         ### Step 4: Draw detected objects and message text to video frame
         d.annotate_ball(frame)
-        display_performance(frame, d.text_tr, d.text_spacing, start, end, frame_time)
+        display_performance(frame, d.text_tr, d.text_spacing, start, end, frame_time, vid_settings['text_size'])
 
         ### Step 5: Display video on screen
         cv.imshow(window_name, frame)

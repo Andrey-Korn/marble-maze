@@ -17,12 +17,12 @@ contrast: 15
 saturation: 75
 
 frame_height: 
-  - 10
-  - 400
+  - 0
+  - 650
 
 frame_width:
-  - 10
-  - 700
+  - 200
+  - 1100
 
 ball_radius:
   - 10
@@ -31,3 +31,27 @@ ball_radius:
 median_offset: 2
 
 magnitude_scalar: 100
+
+search_area: 60
+
+text_tl:
+  - 40
+  - 40
+
+text_tr:
+  - 550
+  - 40
+
+text_spacing: 40
+
+text_size: 1
+
+# corner offsets
+# (tl_offset, tr_offset, bl_offset, br_offset)
+# only setup for 1080p currently
+offsets:
+  - 80
+  - 75
+  - 100
+  - 80
+  - 60
