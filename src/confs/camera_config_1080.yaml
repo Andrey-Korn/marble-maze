@@ -30,6 +30,8 @@ ball_radius:
 
 median_offset: 4
 
+magnitude_scalar: 100
+
 search_area: 100
 
 text_tl:
@@ -42,13 +44,11 @@ text_tr:
 
 text_spacing: 50
 
-  # corner offsets
+# corner offsets
 # (tl_offset, tr_offset, bl_offset, br_offset)
 # only setup for 1080p currently
 offsets:
   - 100
   - 150
-  - 100
-  - 120
   - 80
-
+  - 120

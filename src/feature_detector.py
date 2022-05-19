@@ -160,7 +160,7 @@ class detector(object):
 
         # search for top right
         print('\n-----------------------\nTOP RIGHT\n-----------------------\n')
-        tr_frame = crop_frame(src, (0, self.offsets[4]), (self.width - self.offsets[1], self.width))
+        tr_frame = crop_frame(src, (0, self.offsets[2]), (self.width - self.offsets[1], self.width))
         tr_corner = self.fast.detect(tr_frame, None)
         tr_frame = cv.drawKeypoints(tr_frame, tr_corner, None, color=(255, 0, 0))
         cv.imshow('top_right', tr_frame)
