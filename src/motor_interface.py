@@ -40,6 +40,10 @@ class motor_interface(object):
         self.target = new_target
         self.angle_string = f'<{self.target[0]},{self.target[1]}>'
 
+    def set_angle_and_send(self, new_target):
+        self.set_angle(new_target)
+        self.send_angle()
+
 
 
 test_angles = [ [0, 0], [1, 0], [-1, 0], [0, 1], [0, -1] ]

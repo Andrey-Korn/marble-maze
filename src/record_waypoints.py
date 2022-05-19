@@ -17,7 +17,7 @@ class recorder(object):
 
     def mouse_event(self, event, x, y, flags, param):
         if event == cv.EVENT_LBUTTONDOWN:
-            print(f'{x} : {y}')
+            print(f'x: {x} y: {y}')
             self.append_point((x, y, 25))
 
         # if event == cv.EVENT_RBUTTONDOWN:
@@ -40,7 +40,7 @@ class recorder(object):
 def main():
 
     # setup arguments and parse to get config files
-    script_desc = 'Display feature detection to screen'
+    script_desc = 'Record waypoints to JSON file'
     args = setup_arg_parser(script_desc)
     vid_conf = args.camera
     maze_conf = args.maze
