@@ -95,9 +95,7 @@ def at_target(error, range):
 # cv functions
 def draw_text(img: np.ndarray, text:str, position: tuple, BGR_color: tuple) -> None:
     """ Draws text of color BGR_color to img at position """
-    new_img = cv.putText(img, text, position, cv.FONT_HERSHEY_SIMPLEX, 2, BGR_color, 3)
-    img = new_img
-
+    cv.putText(img, text, position, cv.FONT_HERSHEY_SIMPLEX, 2, BGR_color, 3)
 
 def draw_circles(img: np.ndarray, circles: list, num: int = -1, BGR_color: tuple = (0, 0, 255)) -> None:
     """ Draws output from cv.HoughCircles onto img """
@@ -109,3 +107,13 @@ def draw_circles(img: np.ndarray, circles: list, num: int = -1, BGR_color: tuple
         cv.circle(img, (c[0],c[1]), c[2], BGR_color, 3)   # Draw circle
         cv.circle(img, (c[0],c[1]), 2, BGR_color, 3)   # Draw dot at circle's center
     return
+
+def display_performance(frame, start, end, frame_time):
+    elapsed_time = np.around(1000 * (end - frame_time), decimals=1)
+    calc_time = np.around(1000 * (end - start), decimals=1)
+    fps = np.around(1.0 / (end - frame_time), decimals=1)
+
+    # draw frame time
+    draw_text(frame, f'rtt: {elapsed_time} ms', (700, 750), color_map["cyan"])
+    draw_text(frame, f'calc t: {calc_time} ms', (700, 850), color_map["cyan"])
+    draw_text(frame, f'FPS: {fps}', (700, 950), color_map["cyan"])

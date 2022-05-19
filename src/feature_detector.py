@@ -269,8 +269,7 @@ class detector(object):
             # return None
 
     def crop_no_transform(self, frame):
-        frame = crop_frame(frame, self.settings['frame_height'], self.settings['frame_width'])
-        return frame
+        return crop_frame(frame, self.settings['frame_height'], self.settings['frame_width'])
 
     def crop_and_transform(self, frame):
         # Crop video frame to only desired area
@@ -314,12 +313,12 @@ class detector(object):
         if self.ball_pos is None:
             self.missed_frames_ball += 1
 
-
-    def annotate_frame(self, frame, start, end, frame_time):
+    def annotate_path(self, frame):
         # Draw path
         if self.path is not None:
             cv.drawContours(frame, self.path, -1, color_map["orange"], 2)
 
+    def annotate_ball(self, frame):
         # Draw ball position and message text
         if self.ball_pos is not None:
             msg, msg_color = "Ball detected", "green"
@@ -329,24 +328,11 @@ class detector(object):
             msg, msg_color = "Ball NOT detected", "red"
         draw_text(frame, msg, (100, 100), color_map[msg_color])
 
-        elapsed_time = np.around(1000 * (end - frame_time), decimals=1)
-        calc_time = np.around(1000 * (end - start), decimals=1)
-        fps = np.around(1.0 / (end - frame_time), decimals=1)
-
-        # draw frame time
-        draw_text(frame, f'rtt: {elapsed_time} ms', (700, 750), color_map["cyan"])
-        draw_text(frame, f'calc t: {calc_time} ms', (700, 850), color_map["cyan"])
-        draw_text(frame, f'FPS: {fps}', (700, 950), color_map["cyan"])
-
-        return frame
-
 
 # timer vars
 frame_time = 0
 start = 0
 end = 0
-elapsed_time = 0
-calc_time = 0
 
 def main():
 
@@ -386,7 +372,8 @@ def main():
         end = timer() # time after all calculation were completed
 
         ### Step 4: Draw detected objects and message text to video frame
-        frame = d.annotate_frame(frame, start, end, frame_time)
+        d.annotate_ball(frame)
+        display_performance(frame, start, end, frame_time)
 
         ### Step 5: Display video on screen
         cv.imshow(window_name, frame)
