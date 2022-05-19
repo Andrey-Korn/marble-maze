@@ -1,5 +1,6 @@
 import cv2 as cv
 import numpy as np
+from numpy.lib import utils
 import yaml
 import argparse
 
@@ -56,7 +57,11 @@ def setup_arg_parser(desc, maze_req=True):
 
     # get camera config
     parser.add_argument('-c', '--camera', type=str, nargs=1,
-                        help='camera config file')
+                        help='specify camera YAML config file')
+
+    # get path file
+    parser.add_argument('-p', '--path', type=str, nargs=1,
+                        help='specify path JSON file')
 
     args = parser.parse_args()
     if args.camera == None:
@@ -71,6 +76,7 @@ def setup_arg_parser(desc, maze_req=True):
     else:
         print('not a valid maze board #!')
         quit()
+
     print(args)
     return args
 
@@ -93,9 +99,23 @@ def at_target(error, range):
     return (abs(error[0]) < range and abs(error[1]) < range)
 
 # cv functions
-def draw_text(img: np.ndarray, text:str, position: tuple, BGR_color: tuple) -> None:
+def draw_text(img: np.ndarray, text:str, position: tuple, BGR_color: tuple, font_size=1.5) -> None:
     """ Draws text of color BGR_color to img at position """
-    cv.putText(img, text, position, cv.FONT_HERSHEY_SIMPLEX, 2, BGR_color, 3)
+    cv.putText(img, text, position, cv.FONT_HERSHEY_SIMPLEX, font_size, BGR_color, 3)
+
+def annotate_point(img: np.ndarray, text:str, position: tuple, BGR_color:tuple) -> None:
+    draw_text(img, text, (position[0] + 25 ,position[1] + 25), BGR_color, font_size=1)
+
+def draw_line(img: np.ndarray, start, end, BGR_color: tuple=color_map['orange'], thickness=4):
+    cv.line(img, start, end, BGR_color, thickness)
+
+def draw_magnitude(img: np.ndarray, start, tilt, BGR_color: tuple=color_map['orange'], thickness=2):
+    start = (start[0], start[1])
+    # print(tilt)
+    end = (int(start[0] + (100 * tilt[0])), int(start[1] + (-100 * tilt[1])))
+    # print(start)
+    # print(end)
+    draw_line(img, start, end, BGR_color, thickness)
 
 def draw_circles(img: np.ndarray, circles: list, num: int = -1, BGR_color: tuple = (0, 0, 255)) -> None:
     """ Draws output from cv.HoughCircles onto img """
@@ -114,6 +134,6 @@ def display_performance(frame, start, end, frame_time):
     fps = np.around(1.0 / (end - frame_time), decimals=1)
 
     # draw frame time
-    draw_text(frame, f'rtt: {elapsed_time} ms', (700, 750), color_map["cyan"])
-    draw_text(frame, f'calc t: {calc_time} ms', (700, 850), color_map["cyan"])
-    draw_text(frame, f'FPS: {fps}', (700, 950), color_map["cyan"])
+    draw_text(frame, f'rtt: {elapsed_time} ms', (850, 50), color_map["cyan"])
+    draw_text(frame, f'calc t: {calc_time} ms', (850, 100), color_map["cyan"])
+    draw_text(frame, f'FPS: {fps}', (850, 150), color_map["cyan"])

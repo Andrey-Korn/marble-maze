@@ -234,7 +234,7 @@ class detector(object):
         no_green_red = cv.bitwise_and(no_green, no_green, mask=no_red)
 
         kernel = np.ones((3,3), np.uint8)
-        eroded_dilated = self.erode_and_dilate(no_green_red, 5)
+        eroded_dilated = self.erode_and_dilate(no_green_red, 3)
         # eroded_dilated = erode_and_dilate(no_green_red, 1)
 
         # uncomment to see ball segmentation
@@ -323,7 +323,7 @@ class detector(object):
         if self.ball_pos is not None:
             msg, msg_color = "Ball detected", "green"
             draw_circles(frame, [self.ball_pos], BGR_color=color_map["magenta"])
-            draw_text(frame, f"Position (X, Y): {self.ball_pos[0]}, {self.ball_pos[1]}", (100, 200), color_map["green"])
+            annotate_point(frame, f'{self.ball_pos[0]},{self.ball_pos[1]}', self.ball_pos, color_map['magenta'])
         else:
             msg, msg_color = "Ball NOT detected", "red"
         draw_text(frame, msg, (100, 100), color_map[msg_color])

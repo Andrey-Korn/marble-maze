@@ -59,6 +59,9 @@ def main():
 
         ### Step 4: Draw detected objects and message text to video frame
         d.annotate_ball(frame)
+        # draw table tilt magnitude where ball is located
+        if d.ball_pos is not None:
+            draw_magnitude(frame, d.ball_pos, ps4.axis_data)
         display_performance(frame, start, end, frame_time)
 
         ### Step 5: Display video on screen

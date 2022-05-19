@@ -25,7 +25,7 @@ class motor_interface(object):
         self.baud = self.conn_settings['baudrate']
         self.timeout = self.conn_settings['timeout']
 
-        self.esp32 = serial.Serial(port='/dev/ttyUSB0', baudrate=115200, timeout=0.1)
+        self.esp32 = serial.Serial(port=self.port, baudrate=self.baud, timeout=self.timeout)
 
     def send_angle(self):
         self.esp32.write(bytes(self.angle_string, 'utf-8'))
