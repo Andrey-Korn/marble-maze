@@ -1,12 +1,3 @@
 # configuration for the hardest BRIO maze (default)
 
 fast_thresh: 20
-
-# corner offsets
-# (tl_offset, tr_offset, bl_offset, br_offset)
-# only setup for 1080p currently
-offsets:
-  - 100
-  - 100
-  - 100
-  - 100

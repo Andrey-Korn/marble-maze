@@ -45,6 +45,19 @@ class detector(object):
         self.prev_bl = (self.height, 0)
         self.prev_br = (self.height, self.width)
 
+        # corner filtering
+        self.med_offset = self.settings['median_offset']
+        self.offsets = self.settings['offsets']
+
+        # search area when ball already known
+        self.area_size = self.settings['search_area']
+
+        # annotated text locations
+        self.text_tl = (self.settings['text_tl'][0], self.settings['text_tl'][1])
+        self.text_tr = (self.settings['text_tr'][0], self.settings['text_tr'][1])
+        self.text_spacing = self.settings['text_spacing']
+        self.text_size = self.settings['text_size']
+
 
     def detect_path(self, img: np.ndarray) -> np.ndarray:
         """
@@ -85,9 +98,9 @@ class detector(object):
         return
 
     def valid_keypoint(self, median, value) -> bool:
-        # print(f'height?: {median[0] - 4} < {value[0]} < {median[0] + 4}')
-        # print(f'width?: {median[1] - 4} < {value[1]} < {median[1] + 4}')
-        return ( (median[0] - 4 < value[0] < median[0] + 4) and (median[1] - 4 < value[1] < median[1] + 4) )
+        return (
+            (median[0] - self.med_offset < value[0] < median[0] + self.med_offset) and
+            (median[1] - self.med_offset < value[1] < median[1] + self.med_offset) )
 
 
     def filter_corner(self, kp):
@@ -134,7 +147,7 @@ class detector(object):
         # crop_frame(src, height_range, width_range)
         # search for top left
         print('\n-----------------------\nTOP LEFT\n-----------------------\n')
-        tl_frame = crop_frame(src, (0, 100), (0, 100))
+        tl_frame = crop_frame(src, (0, self.offsets[0]), (0, self.offsets[0]))
         tl_corner = self.fast.detect(tl_frame, None)
         tl_frame = cv.drawKeypoints(tl_frame, tl_corner, None, color=(255, 0, 0))
         cv.imshow('top_left', tl_frame)
@@ -148,13 +161,13 @@ class detector(object):
 
         # search for top right
         print('\n-----------------------\nTOP RIGHT\n-----------------------\n')
-        tr_frame = crop_frame(src, (0, 100), (self.width - 150, self.width))
+        tr_frame = crop_frame(src, (0, self.offsets[2]), (self.width - self.offsets[1], self.width))
         tr_corner = self.fast.detect(tr_frame, None)
         tr_frame = cv.drawKeypoints(tr_frame, tr_corner, None, color=(255, 0, 0))
         cv.imshow('top_right', tr_frame)
         tr_corner = self.filter_corner(tr_corner)
         if tr_corner is not None:
-            tr_corner = (tr_corner[0], (self.width - 150) + tr_corner[1])
+            tr_corner = (tr_corner[0], (self.width - self.offsets[1]) + tr_corner[1])
             self.prev_tr = tr_corner
         else:
             tr_corner = self.prev_tr
@@ -162,13 +175,13 @@ class detector(object):
 
         # search for bot left
         print('\n-----------------------\nBOT LEFT\n-----------------------\n')
-        bl_frame = crop_frame(src, (self.height - 100, self.height), (0, 100))
+        bl_frame = crop_frame(src, (self.height - self.offsets[0], self.height), (0, self.offsets[0]))
         bl_corner = self.fast.detect(bl_frame, None)
         bl_frame = cv.drawKeypoints(bl_frame, bl_corner, None, color=(255, 0, 0))
         cv.imshow('bot_left', bl_frame)
         bl_corner = self.filter_corner(bl_corner)
         if bl_corner is not None:
-            bl_corner = ((self.height - 100) + bl_corner[0], bl_corner[1])
+            bl_corner = ((self.height - self.offsets[0]) + bl_corner[0], bl_corner[1])
             self.prev_bl = bl_corner
         else:
             bl_corner = self.prev_bl
@@ -176,13 +189,13 @@ class detector(object):
 
         # search for bot right
         print('\n-----------------------\nBOT LEFT\n-----------------------\n')
-        br_frame = crop_frame(src, (self.height - 100, self.height), (self.width - 120, self.width))
+        br_frame = crop_frame(src, (self.height - self.offsets[0], self.height), (self.width - self.offsets[3], self.width))
         br_corner = self.fast.detect(br_frame, None)
         br_frame = cv.drawKeypoints(br_frame, br_corner, None, color=(255, 0, 0))
         cv.imshow('bot_right', br_frame)
         br_corner = self.filter_corner(br_corner)
         if br_corner is not None:
-            br_corner = ((self.height - 100) + br_corner[0], (self.width - 120) + br_corner[1])
+            br_corner = ((self.height - self.offsets[0]) + br_corner[0], (self.width - self.offsets[3]) + br_corner[1])
             self.prev_br
         else:
             br_corner = self.prev_br
@@ -293,18 +306,17 @@ class detector(object):
         if self.ball_pos is None:    # If ball was not detected during last cycle, search entire video frame
             self.ball_pos = self.detect_blue_ball(frame)
         else:                   # If ball was detected last cycle, search only the area surrounding the most recently recorded ball position
-            area_size = 100
-            x_min_offset = min(0, self.ball_pos[0] - area_size)
-            y_min_offset = min(0, self.ball_pos[1] - area_size)
-            x_min, x_max = max(0, self.ball_pos[0] - area_size), self.ball_pos[0] + area_size
-            y_min, y_max = max(0, self.ball_pos[1] - area_size), self.ball_pos[1] + area_size
+            x_min_offset = min(0, self.ball_pos[0] - self.area_size)
+            y_min_offset = min(0, self.ball_pos[1] - self.area_size)
+            x_min, x_max = max(0, self.ball_pos[0] - self.area_size), self.ball_pos[0] + self.area_size
+            y_min, y_max = max(0, self.ball_pos[1] - self.area_size), self.ball_pos[1] + self.area_size
             new_ball_pos = self.detect_blue_ball(frame[y_min:y_max, x_min:x_max, :])
             
             # If a ball was successfully detected near prior ball position, calculates new ball position from relative coordinates
             if new_ball_pos is not None:
                 new_ball_pos = (
-                    max(0, new_ball_pos[0] + self.ball_pos[0] - area_size - x_min_offset), 
-                    max(0, new_ball_pos[1] + self.ball_pos[1] - area_size - y_min_offset),
+                    max(0, new_ball_pos[0] + self.ball_pos[0] - self.area_size - x_min_offset), 
+                    max(0, new_ball_pos[1] + self.ball_pos[1] - self.area_size - y_min_offset),
                     new_ball_pos[2]
                 )
             self.ball_pos = new_ball_pos
@@ -326,7 +338,7 @@ class detector(object):
             annotate_point(frame, f'{self.ball_pos[0]},{self.ball_pos[1]}', self.ball_pos, color_map['magenta'])
         else:
             msg, msg_color = "Ball NOT detected", "red"
-        draw_text(frame, msg, (100, 100), color_map[msg_color])
+        draw_text(frame, msg, self.text_tl, color_map[msg_color], font_size=self.text_size)
 
 
 # timer vars
@@ -373,7 +385,7 @@ def main():
 
         ### Step 4: Draw detected objects and message text to video frame
         d.annotate_ball(frame)
-        display_performance(frame, start, end, frame_time)
+        display_performance(frame, d.text_tr, d.text_spacing, start, end, frame_time, vid_settings['text_size'])
 
         ### Step 5: Display video on screen
         cv.imshow(window_name, frame)

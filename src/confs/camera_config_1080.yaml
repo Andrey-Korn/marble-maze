@@ -27,3 +27,30 @@ frame_width:
 ball_radius:
   - 20
   - 30
+
+median_offset: 4
+
+magnitude_scalar: 100
+
+search_area: 100
+
+text_tl:
+  - 50
+  - 50
+
+text_tr:
+  - 850
+  - 50
+
+text_spacing: 50
+
+text_size: 1.5
+
+# corner offsets
+# (tl_offset, tr_offset, bl_offset, br_offset)
+# only setup for 1080p currently
+offsets:
+  - 100
+  - 150
+  - 80
+  - 120

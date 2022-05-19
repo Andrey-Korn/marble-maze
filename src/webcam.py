@@ -23,7 +23,7 @@ class webcam():
 		# set fullscreen
 		self.window_name = self.settings['window_name']
 		cv.namedWindow(self.window_name, cv.WND_PROP_FULLSCREEN)
-		cv.setWindowProperty(self.window_name, cv.WND_PROP_FULLSCREEN, cv.WINDOW_FULLSCREEN)
+		# cv.setWindowProperty(self.window_name, cv.WND_PROP_FULLSCREEN, cv.WINDOW_FULLSCREEN)
 
 		# set resolution
 		self.frame_width = self.settings['resolution'][0]
