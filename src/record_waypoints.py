@@ -4,20 +4,16 @@
 import cv2 as cv
 from utils import *
 from webcam import webcam
+from feature_detector import detector
 import json
 
 class recorder(object):
 
+    d = None
     points = []
-    def __init__(self, conf) -> None:
-        # configure webcam
-        self.camera = webcam(conf)
-        self.settings = read_yaml(conf)
-        self.window_name = self.settings['window_name']
 
-    # return frame from webcam object
-    def grab_frame(self):
-        return self.camera.read_frame()
+    def __init__(self, settings) -> None:
+        self.settings = settings
 
     def mouse_event(self, event, x, y, flags, param):
         if event == cv.EVENT_LBUTTONDOWN:
@@ -27,7 +23,6 @@ class recorder(object):
         # if event == cv.EVENT_RBUTTONDOWN:
         if event == cv.EVENT_MBUTTONDOWN:
             self.dequeue_point()
-
 
     def append_point(self, pt):
         self.points.append(pt)
@@ -40,46 +35,47 @@ class recorder(object):
     # draw circles where points were placed
     def display_points(self, frame):
         draw_circles(frame, self.points, BGR_color=color_map["brightorange"])
-        
-
-    def update(self):
-        ret, frame = self.grab_frame()
-        frame = crop_frame(frame, self.settings['frame_height'], self.settings['frame_width'])
-
-        if not ret:
-            return False
-
-        # draw circles
-        self.display_points(frame)
-
-        # display frame
-        cv.imshow(self.window_name, frame)
-
-        return True
 
 
 def main():
 
-    # create recorder
-    config_file = config_files['camera_1080']
-    r = recorder(config_file)
+    # setup arguments and parse to get config files
+    script_desc = 'Display feature detection to screen'
+    args = setup_arg_parser(script_desc)
+    vid_conf = args.camera
+    maze_conf = args.maze
+    vid_settings = read_yaml(vid_conf)
+    maze_settings = read_yaml(maze_conf)
+    window_name = vid_settings['window_name']
+
+    camera = webcam(vid_settings)
+    d = detector(vid_settings, maze_settings)
+    r = recorder(vid_settings)
 
     # setup mouse events
-    cv.setMouseCallback(r.window_name, r.mouse_event)
+    cv.setMouseCallback(window_name, r.mouse_event)
 
     # monitor webcam, and record waypoints to file
     while True:
 
-        # run 1 frame
-        if not r.update():
+        # get camera frame and crop down to usable area
+        ret, frame = camera.read_frame()
+        if not ret:
             print('End of video stream, exiting...')
             break
+        frame = crop_frame(frame, vid_settings['frame_height'], vid_settings['frame_width'])
+
+        # draw circles
+        r.display_points(frame)
+
+        # display frame
+        cv.imshow(window_name, frame)
 
         if cv.waitKey(1) == ord('q'):
             break
 
-    r.camera.print_camera_settings()
-    r.camera.vid.release()
+    camera.print_camera_settings()
+    camera.vid.release()
     cv.destroyAllWindows()
 
     # record waypoints to file

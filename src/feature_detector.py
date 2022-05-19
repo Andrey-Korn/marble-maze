@@ -349,15 +349,17 @@ elapsed_time = 0
 calc_time = 0
 
 def main():
+
+    # setup arguments and parse to get config files
     script_desc = 'Display feature detection to screen'
     args = setup_arg_parser(script_desc)
     vid_conf = args.camera
     maze_conf = args.maze
-    camera = webcam(vid_conf)
     vid_settings = read_yaml(vid_conf)
     maze_settings = read_yaml(maze_conf)
     window_name = vid_settings['window_name']
  
+    camera = webcam(vid_settings)
     d = detector(vid_settings, maze_settings)
 
     # Main loop - object detection and labeling for each video frame
