@@ -1,14 +1,3 @@
 # configuration for the easiest BRIO maze board (insert)
 
 fast_thresh: 25
-
-# corner offsets
-# (tl_offset, tr_offset, bl_offset, br_offset)
-# only setup for 1080p currently
-offsets:
-  - 100
-  - 100
-  - 100
-  - 100
-
-median_offset: 4

@@ -109,10 +109,10 @@ def annotate_point(img: np.ndarray, text:str, position: tuple, BGR_color:tuple) 
 def draw_line(img: np.ndarray, start, end, BGR_color: tuple=color_map['orange'], thickness=4):
     cv.line(img, start, end, BGR_color, thickness)
 
-def draw_magnitude(img: np.ndarray, start, tilt, BGR_color: tuple=color_map['orange'], thickness=2):
+def draw_magnitude(img: np.ndarray, start, tilt, scalar:int, BGR_color: tuple=color_map['orange'], thickness=2):
     start = (start[0], start[1])
     # print(tilt)
-    end = (int(start[0] + (100 * tilt[0])), int(start[1] + (-100 * tilt[1])))
+    end = (int(start[0] + (scalar * tilt[0])), int(start[1] + (-scalar * tilt[1])))
     # print(start)
     # print(end)
     draw_line(img, start, end, BGR_color, thickness)
@@ -128,12 +128,15 @@ def draw_circles(img: np.ndarray, circles: list, num: int = -1, BGR_color: tuple
         cv.circle(img, (c[0],c[1]), 2, BGR_color, 3)   # Draw dot at circle's center
     return
 
-def display_performance(frame, start, end, frame_time):
+def display_performance(frame, location, spacing, start, end, frame_time):
     elapsed_time = np.around(1000 * (end - frame_time), decimals=1)
     calc_time = np.around(1000 * (end - start), decimals=1)
     fps = np.around(1.0 / (end - frame_time), decimals=1)
 
     # draw frame time
-    draw_text(frame, f'rtt: {elapsed_time} ms', (850, 50), color_map["cyan"])
-    draw_text(frame, f'calc t: {calc_time} ms', (850, 100), color_map["cyan"])
-    draw_text(frame, f'FPS: {fps}', (850, 150), color_map["cyan"])
+    # draw_text(frame, f'rtt: {elapsed_time} ms', (850, 50), color_map["cyan"])
+    draw_text(frame, f'rtt: {elapsed_time} ms', location, color_map["cyan"])
+    # draw_text(frame, f'calc t: {calc_time} ms', (850, 100), color_map["cyan"])
+    draw_text(frame, f'calc t: {calc_time} ms', (location[0], location[1] + spacing), color_map["cyan"])
+    # draw_text(frame, f'FPS: {fps}', (850, 150), color_map["cyan"])
+    draw_text(frame, f'FPS: {fps}', (location[0], location[1] + (2 * spacing)), color_map["cyan"])

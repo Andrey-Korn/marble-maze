@@ -16,14 +16,18 @@ contrast: 15
 
 saturation: 75
 
-# frame_height: 
-#   - 10
-#   - 400
+frame_height: 
+  - 10
+  - 400
 
-# frame_width:
-#   - 10
-#   - 700
+frame_width:
+  - 10
+  - 700
 
-# ball_radius:
-#   - 10
-#   - 20
+ball_radius:
+  - 10
+  - 20
+
+median_offset: 2
+
+magnitude_scalar: 100
