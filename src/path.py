@@ -27,7 +27,7 @@ class path(object):
         draw_circles(frame, self.pts[self.idx:], BGR_color=color_map['green'])
 
         if len(self.pts) > 1:
-            draw_circles(frame, self.pts[self.idx + 1:], BGR_color=color_map['yellow'])
+            draw_circles(frame, self.pts[self.idx + 1:], BGR_color=color_map['orange'], annotate=True)
 
         if self.finished:
             draw_text(frame, 'winner!', position= (500, 500), BGR_color=color_map['blue'], font_size=3)

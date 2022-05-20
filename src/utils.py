@@ -125,15 +125,19 @@ def draw_magnitude(img: np.ndarray, start, tilt, scalar:int, BGR_color: tuple=co
     # print(end)
     draw_line(img, start, end, BGR_color, thickness)
 
-def draw_circles(img: np.ndarray, circles: list, num: int = -1, BGR_color: tuple = (0, 0, 255)) -> None:
+def draw_circles(img: np.ndarray, circles: list, num: int = -1, BGR_color: tuple = (0, 0, 255), annotate=False) -> None:
     """ Draws output from cv.HoughCircles onto img """
 
     if num == -1:
         num = len(circles)
 
+    i = 1
     for c in circles[:num]:
         cv.circle(img, (c[0],c[1]), c[2], BGR_color, 3)   # Draw circle
         cv.circle(img, (c[0],c[1]), 2, BGR_color, 3)   # Draw dot at circle's center
+        if annotate:
+            annotate_point(img, f'{i}', (c[0], c[1]), BGR_color)
+            i += 1
     return
 
 def display_performance(frame, location, spacing, start, end, frame_time, text_size):
