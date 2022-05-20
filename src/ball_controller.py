@@ -80,7 +80,7 @@ def main():
         ### Step 5: Display video on screen
         cv.imshow(window_name, frame)
         
-        ### Step 6: Check for exit command
+        ### Step 6: Check for key command
         if cv.waitKey(1) == ord('q'):
             break
 

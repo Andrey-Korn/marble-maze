@@ -35,13 +35,22 @@ class path(object):
         if self.finished:
             draw_text(frame, 'winner!', position= (500, 500), BGR_color=color_map['blue'], font_size=3)
         
+    def prev_pt(self):
+        if self.idx > 0:
+            self.idx -= 1
+
+    def next_pt(self):
+        if self.idx < len(self.pts) - 1:
+            self.idx += 1
     
     # compare ball position and waypoint and progess maze
     def process_update(self, ball_pos):
-        if self.ball_at_pt(ball_pos) and len(self.pts) - 1 > self.idx:
-            self.idx += 1
+        print(f'{len(self.pts)}, {self.idx}')
         if self.idx == len(self.pts) - 1 and self.ball_at_pt(ball_pos):
             self.finished = True
+
+        if self.ball_at_pt(ball_pos) and len(self.pts) - 1 > self.idx:
+            self.idx += 1
 
 
     def ball_at_pt(self, ball_pos):
@@ -105,15 +114,21 @@ def main():
 
 
         # update and show path
-        p.process_update(d.ball_pos)
+        if d.ball_pos is not None:
+            p.process_update(d.ball_pos)
         p.draw_waypoints(frame, d.ball_pos)
 
         ### Step 5: Display video on screen
         cv.imshow(window_name, frame)
         
         ### Step 6: Check for exit command
-        if cv.waitKey(1) == ord('q'):
+        wait = cv.waitKey(1)
+        if wait == ord('q'):
             break
+        elif wait == ord('b'):
+            p.prev_pt()
+        elif wait == ord('n'):
+            p.next_pt()
 
     # clean up
     camera.vid.release()

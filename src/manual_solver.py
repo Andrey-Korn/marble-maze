@@ -84,8 +84,13 @@ def main():
         cv.imshow(window_name, frame)
         
         ### Step 6: Check for exit command
-        if cv.waitKey(1) == ord('q'):
+        wait = cv.waitKey(1)
+        if wait == ord('q'):
             break
+        elif wait == ord('b'):
+            p.prev_pt()
+        elif wait == ord('n'):
+            p.next_pt()
 
     # clean up
     camera.vid.release()
