@@ -6,21 +6,66 @@ from feature_detector import detector
 from simple_pid import PID
 from utils import *
 from timeit import default_timer as timer
+from motor_interface import motor_interface
 
 # global mouse click pos
 mouse_x, mouse_y = -1, -1
 
 class ball_controller:
 
+    # p = 0.001
+    p = 0.002
+    # i = 0.02
+    i = 0.04
+    # d = 0
+    d = 0.0045
+
+    # ESP32 stepper motor interface
+    motors = None
+
     # target to move the ball towards
     target = None
 
+    # setup PID, and set setpoint to an error of 0
+    x_pid = PID(p, i, d, setpoint=0)
+    x_out = 0
+    y_pid = PID(p, i, d, setpoint=0)
+    y_out = 0
+    output = 0
+    x_pid.sample_time = 1.0 / 120
+    y_pid.sample_time = 1.0 / 120
+
     def __init__(self):
-        pass
+        # set output limits to format ESP-32 driver expects
+        # self.x_pid.output_limits = (-1, 1)
+        self.x_pid.output_limits = (-0.7, 0.7)
+        # self.y_pid.output_limits = (-1, 1)
+        self.y_pid.output_limits = (-0.7, 0.7)
+
+        self.motors = motor_interface()
 
     def mouse_event(self, event, x, y, flags, param):
         if event == cv.EVENT_LBUTTONDOWN:
             self.target = (x, y, 25)
+
+    def process_update(self, ball_pos):
+        # print(f'{ball_pos}, {self.target}')
+        if ball_pos and self.target is not None:
+            error = ball_error(ball_pos, self.target)
+            # print(error)
+            self.x_out = -self.x_pid(error[0])
+            self.y_out = self.y_pid(error[1])
+            self.output = [self.x_out, self.y_out]
+        else:
+            self.output = [0, 0]
+
+
+        self.motors.set_angle_and_send(self.output)
+
+    def set_target(self, target):
+        self.target = target
+        
+
 
 def main():
     script_desc = 'Interact with ball control realtime via mouse events'
@@ -58,14 +103,17 @@ def main():
         ### Step 3: detect objects
         d.detect_objects(frame)
 
+        #update PID control
+        c.process_update(d.ball_pos)
+
         end = timer() # time after all calculation were completed
 
         ### Step 4: Draw detected objects and message text to video frame
         d.annotate_ball(frame)
 
         # draw table tilt magnitude where ball is located
-        # if d.ball_pos is not None:
-            # draw_magnitude(frame, d.ball_pos, ps4.axis_data, vid_settings['magnitude_scalar'], color_map['brightorange'])
+        if d.ball_pos is not None:
+            draw_magnitude(frame, d.ball_pos, c.output, vid_settings['magnitude_scalar'], color_map['brightorange'])
 
         # draw error line
         if d.ball_pos and c.target is not None:
