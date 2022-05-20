@@ -74,11 +74,11 @@ def main():
         d.annotate_ball(frame)
         # draw table tilt magnitude where ball is located
         if d.ball_pos is not None:
-            draw_magnitude(frame, d.ball_pos, ps4.axis_data, vid_settings['magnitude_scalar'])
+            draw_magnitude(frame, d.ball_pos, ps4.axis_data, vid_settings['magnitude_scalar'], color_map['brightorange'])
         display_performance(frame, d.text_tr, d.text_spacing, start, end, frame_time, vid_settings['text_size'])
 
         p.process_update(d.ball_pos)
-        p.draw_waypoints(frame)
+        p.draw_waypoints(frame, d.ball_pos)
 
         ### Step 5: Display video on screen
         cv.imshow(window_name, frame)

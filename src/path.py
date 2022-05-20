@@ -22,9 +22,12 @@ class path(object):
 
 
     # draw all waypoints with color_code
-    def draw_waypoints(self, frame):
+    def draw_waypoints(self, frame, ball_pos):
         # draw first waypoint in green
         draw_circles(frame, self.pts[self.idx:], BGR_color=color_map['green'])
+        # draw error line
+        if ball_pos is not None:
+           draw_line(frame, (self.pts[self.idx][0], self.pts[self.idx][1]), (ball_pos[0], ball_pos[1]), BGR_color=color_map['red'])
 
         if len(self.pts) > 1:
             draw_circles(frame, self.pts[self.idx + 1:], BGR_color=color_map['orange'], annotate=True)
@@ -103,7 +106,7 @@ def main():
 
         # update and show path
         p.process_update(d.ball_pos)
-        p.draw_waypoints(frame)
+        p.draw_waypoints(frame, d.ball_pos)
 
         ### Step 5: Display video on screen
         cv.imshow(window_name, frame)
