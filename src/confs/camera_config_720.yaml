@@ -50,8 +50,7 @@ text_size: 1
 # (tl_offset, tr_offset, bl_offset, br_offset)
 # only setup for 1080p currently
 offsets:
-  - 80
-  - 75
+  - 100
   - 100
   - 80
   - 60

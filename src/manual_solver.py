@@ -7,6 +7,7 @@ from ball_controller import ball_controller
 from feature_detector import detector
 from ps4_controller import ps4_controller
 from webcam import webcam
+from path import path
 from utils import *
 from timeit import default_timer as timer
 
@@ -29,6 +30,18 @@ def main():
     camera = webcam(vid_settings)
     d = detector(vid_settings, maze_settings)
     ps4 = ps4_controller()
+
+    file = ''
+
+    if maze_conf == config_files['easy']:
+        file = path_files['easy']
+    if maze_conf == config_files['med']:
+        file = path_files['med']
+    if maze_conf == config_files['hard']:
+        file = path_files['hard']
+
+
+    p = path(file)
 
     # Main loop - object detection and labeling for each video frame
     while True:
@@ -63,6 +76,9 @@ def main():
         if d.ball_pos is not None:
             draw_magnitude(frame, d.ball_pos, ps4.axis_data, vid_settings['magnitude_scalar'])
         display_performance(frame, d.text_tr, d.text_spacing, start, end, frame_time, vid_settings['text_size'])
+
+        p.process_update(d.ball_pos)
+        p.draw_waypoints(frame)
 
         ### Step 5: Display video on screen
         cv.imshow(window_name, frame)

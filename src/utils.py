@@ -49,6 +49,13 @@ config_files = {
     "hard": f'{config_prefix}/maze_hard.yaml'
 }
 
+path_prefix = 'paths'
+path_files = {
+    'easy': f'{path_prefix}/easy.json',
+    'med': f'{path_prefix}/med.json',
+    'hard': f'{path_prefix}/hard.json'
+}
+
 def setup_arg_parser(desc, maze_req=True):
     parser = argparse.ArgumentParser(description=desc)
     # get maze config
@@ -60,8 +67,8 @@ def setup_arg_parser(desc, maze_req=True):
                         help='specify camera YAML config file')
 
     # get path file
-    parser.add_argument('-p', '--path', type=str, nargs=1,
-                        help='specify path JSON file')
+    # parser.add_argument('-p', '--path', type=str, nargs=1,
+                        # help='specify path JSON file')
 
     args = parser.parse_args()
     if args.camera == None:
