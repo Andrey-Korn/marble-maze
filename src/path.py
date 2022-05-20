@@ -45,7 +45,7 @@ class path(object):
     
     # compare ball position and waypoint and progess maze
     def process_update(self, ball_pos):
-        print(f'{len(self.pts)}, {self.idx}')
+        # print(f'{len(self.pts)}, {self.idx}')
         if self.idx == len(self.pts) - 1 and self.ball_at_pt(ball_pos):
             self.finished = True
 
