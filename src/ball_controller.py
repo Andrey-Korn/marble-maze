@@ -13,12 +13,12 @@ mouse_x, mouse_y = -1, -1
 
 class ball_controller:
 
-    # p = 0.001
-    p = 0.002
-    # i = 0.02
+    p = 0.0015
+    # p = 0.007
     i = 0.04
-    # d = 0
-    d = 0.0045
+    # i = 0.06
+    d = 0.0015
+    # d = 0.0015
 
     # ESP32 stepper motor interface
     motors = None
@@ -38,8 +38,10 @@ class ball_controller:
     def __init__(self):
         # set output limits to format ESP-32 driver expects
         # self.x_pid.output_limits = (-1, 1)
+        # self.x_pid.output_limits = (-0.75, 0.75)
         self.x_pid.output_limits = (-0.7, 0.7)
         # self.y_pid.output_limits = (-1, 1)
+        # self.y_pid.output_limits = (-0.75, 0.75)
         self.y_pid.output_limits = (-0.7, 0.7)
 
         self.motors = motor_interface()
@@ -52,6 +54,18 @@ class ball_controller:
         # print(f'{ball_pos}, {self.target}')
         if ball_pos and self.target is not None:
             error = ball_error(ball_pos, self.target)
+            if (abs(error[0]) < 30 and abs(error[1]) < 30):
+                self.x_pid.output_limits = (-0.2, 0.2)
+                self.y_pid.output_limits = (-0.2, 0.2)
+            elif (abs(error[0]) < 60 and abs(error[1]) < 60):
+                self.x_pid.output_limits = (-0.7, 0.7)
+                self.y_pid.output_limits = (-0.7, 0.7)
+            else:
+                self.x_pid.output_limits = (-0.8, 0.8)
+                self.y_pid.output_limits = (-0.8, 0.8)
+                
+
+            
             # print(error)
             self.x_out = -self.x_pid(error[0])
             self.y_out = self.y_pid(error[1])

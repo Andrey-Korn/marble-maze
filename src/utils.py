@@ -51,7 +51,8 @@ config_files = {
 
 path_prefix = 'paths'
 path_files = {
-    'easy': f'{path_prefix}/easy.json',
+    # 'easy': f'{path_prefix}/easy.json',
+    'easy': f'{path_prefix}/easy2.json',
     'med': f'{path_prefix}/med.json',
     'hard': f'{path_prefix}/hard.json'
 }
