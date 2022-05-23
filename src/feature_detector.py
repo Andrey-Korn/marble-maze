@@ -107,12 +107,12 @@ class detector(object):
         pts = cv.KeyPoint_convert(kp)
         if len(pts) > 0:
             a = np.array(pts)
-            print(f'points\n-------\n{a}\n')
+            # print(f'points\n-------\n{a}\n')
             # print(f'{a[:,0]} {a[:,1]}')
             h = np.median(a[:,0], axis=0)
             w = np.median(a[:,1], axis=0)
             median = np.array([h, w]).astype(int)
-            print(f'median: {median}')
+            # print(f'median: {median}')
 
             remove_idxs = []
             i = 0
@@ -123,7 +123,7 @@ class detector(object):
                     remove_idxs.append(i)
                 i += 1
 
-            print(f'idx\'s to remove: {remove_idxs}')
+            # print(f'idx\'s to remove: {remove_idxs}')
             if len(remove_idxs) < len(a):
                 a = np.delete(a, remove_idxs, axis=0)
             # a = np.average(a, axis=0).astype(int)
@@ -131,7 +131,7 @@ class detector(object):
             h = np.median(a[:,0], axis=0)
             w = np.median(a[:,1], axis=0)
             a = np.array([h, w]).astype(int)
-            print(f'result: {a}')
+            print(f'corner guess: {a}')
             return a
         return None
 
@@ -161,13 +161,13 @@ class detector(object):
 
         # search for top right
         print('\n-----------------------\nTOP RIGHT\n-----------------------\n')
-        tr_frame = crop_frame(src, (0, self.offsets[2]), (self.width - self.offsets[1], self.width))
+        tr_frame = crop_frame(src, (0, self.offsets[0]), (self.width - self.offsets[0], self.width))
         tr_corner = self.fast.detect(tr_frame, None)
         tr_frame = cv.drawKeypoints(tr_frame, tr_corner, None, color=(255, 0, 0))
         cv.imshow('top_right', tr_frame)
         tr_corner = self.filter_corner(tr_corner)
         if tr_corner is not None:
-            tr_corner = (tr_corner[0], (self.width - self.offsets[1]) + tr_corner[1])
+            tr_corner = (tr_corner[0], (self.width - self.offsets[0]) + tr_corner[1])
             self.prev_tr = tr_corner
         else:
             tr_corner = self.prev_tr
@@ -188,18 +188,18 @@ class detector(object):
         # print(bl_corner)
 
         # search for bot right
-        print('\n-----------------------\nBOT LEFT\n-----------------------\n')
-        br_frame = crop_frame(src, (self.height - self.offsets[0], self.height), (self.width - self.offsets[3], self.width))
+        print('\n-----------------------\nBOT RIGHT\n-----------------------\n')
+        br_frame = crop_frame(src, (self.height - self.offsets[0], self.height), (self.width - self.offsets[0], self.width))
         br_corner = self.fast.detect(br_frame, None)
         br_frame = cv.drawKeypoints(br_frame, br_corner, None, color=(255, 0, 0))
         cv.imshow('bot_right', br_frame)
         br_corner = self.filter_corner(br_corner)
         if br_corner is not None:
-            br_corner = ((self.height - self.offsets[0]) + br_corner[0], (self.width - self.offsets[3]) + br_corner[1])
+            br_corner = ((self.height - self.offsets[0]) + br_corner[0], (self.width - self.offsets[0]) + br_corner[1])
             self.prev_br
         else:
             br_corner = self.prev_br
-        # print(br_corner)
+        print(br_corner)
 
         return np.array([tl_corner, tr_corner, bl_corner, br_corner], np.float32)
 
@@ -208,11 +208,22 @@ class detector(object):
     def perspective_transform(self, src: np.ndarray, pts):
         # tl, tr, bl, br
         # [h, w]
-        dest_pts = np.array([[0, 0], [0, self.width], [self.height, 0], [self.height, self.width]], np.float32)
+
+        new_img_br = np.amax(pts, axis=0).astype(int)
+        new_img_tl = np.amin(pts, axis=0).astype(int)
+        new_res =  np.array(new_img_br - new_img_tl)
+        print(new_res)
+        # dest_pts = np.array([[0, 0], [0, self.width], [self.height, 0], [self.height, self.width]], np.float32)
+        dest_pts = np.array([[0, 0], [0, new_res[1]], [new_res[0], 0], [new_res[0], new_res[1]]], np.float32)
         print(pts)
+        # new_res= (np.amax(pts, axis=0).astype(int) - np.amin(pts, axis=0).astype(int))
+        # print(np.amax(pts, axis=0))
+        # print(new_res)
         print(dest_pts)
         matrix = cv.getPerspectiveTransform(pts, dest_pts)
-        result = cv.warpPerspective(src, matrix, (self.width, self.height))
+        # matrix = cv.getPerspectiveTransform(dest_pts, pts)
+        result = cv.warpPerspective(src, matrix, (self.width, self.height), flags=cv.INTER_LINEAR)
+        # result = cv.warpPerspective(src, matrix, (new_res[1], new_res[0]), flags=cv.INTER_LINEAR)
         return result
 
 
@@ -239,16 +250,19 @@ class detector(object):
         """
         blur = cv.GaussianBlur(src, (7, 7), cv.BORDER_DEFAULT)
         blue_channel = blur[:,:,0]
-        ret, green_mask = cv.threshold(blur[:,:,1], 50, 255, cv.THRESH_BINARY_INV)
-        ret, red_mask = cv.threshold(blur[:,:,2], 15, 255, cv.THRESH_BINARY_INV)
-        masked = cv.inRange(blue_channel, 20, 150)
+        # ret, green_mask = cv.threshold(blur[:,:,1], 50, 255, cv.THRESH_BINARY_INV)
+        ret, green_mask = cv.threshold(blur[:,:,1], 45, 255, cv.THRESH_BINARY_INV)
+        # ret, red_mask = cv.threshold(blur[:,:,2], 15, 255, cv.THRESH_BINARY_INV)
+        ret, red_mask = cv.threshold(blur[:,:,2], 5, 255, cv.THRESH_BINARY_INV)
+        # masked = cv.inRange(blue_channel, 20, 150)
+        masked = cv.inRange(blue_channel, 25, 150)
         no_green = cv.bitwise_and(masked, masked, mask=green_mask)
         no_red = cv.bitwise_and(masked, masked, mask=red_mask)
         no_green_red = cv.bitwise_and(no_green, no_green, mask=no_red)
 
         kernel = np.ones((3,3), np.uint8)
-        eroded_dilated = self.erode_and_dilate(no_green_red, 3)
-        # eroded_dilated = erode_and_dilate(no_green_red, 1)
+        # eroded_dilated = self.erode_and_dilate(no_green_red, 3)
+        eroded_dilated = self.erode_and_dilate(no_green_red, 1)
 
         # uncomment to see ball segmentation
         cv.imshow('ball_mask', eroded_dilated)
@@ -375,8 +389,8 @@ def main():
 
 
         ### Step 2: crop and transform to get final maze image
-        # frame = d.crop_and_transform(frame)
-        frame = d.crop_no_transform(frame)
+        frame = d.crop_and_transform(frame)
+        # frame = d.crop_no_transform(frame)
 
         ### Step 3: detect objects
         d.detect_objects(frame)

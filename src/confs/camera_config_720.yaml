@@ -51,6 +51,3 @@ text_size: 1
 # only setup for 1080p currently
 offsets:
   - 100
-  - 100
-  - 80
-  - 60

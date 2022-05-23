@@ -37,7 +37,7 @@ class motor_interface(object):
         self.esp32.write(bytes(self.motor_off, 'utf-8'))
 
     def set_angle(self, new_target):
-        self.target = new_target
+        self.target = (round(new_target[0], ndigits=2), round(new_target[1], ndigits=2))
         self.angle_string = f'<{self.target[0]},{self.target[1]}>'
 
     def set_angle_and_send(self, new_target):
