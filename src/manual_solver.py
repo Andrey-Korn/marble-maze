@@ -41,7 +41,7 @@ def main():
         file = path_files['hard']
 
 
-    p = path(file)
+    # p = path(file)
 
     # Main loop - object detection and labeling for each video frame
     while True:
@@ -62,8 +62,8 @@ def main():
 
 
         ### Step 2: crop and transform to get final maze image
-        # frame = d.crop_and_transform(frame)
-        frame = d.crop_no_transform(frame)
+        # frame, pts = d.crop_and_transform(frame)
+        frame, pts = d.crop_no_transform(frame)
 
         ### Step 3: detect objects
         d.detect_objects(frame)
@@ -77,8 +77,11 @@ def main():
             draw_magnitude(frame, d.ball_pos, ps4.axis_data, vid_settings['magnitude_scalar'], color_map['brightorange'])
         display_performance(frame, d.text_tr, d.text_spacing, start, end, frame_time, vid_settings['text_size'])
 
-        p.process_update(d.ball_pos)
-        p.draw_waypoints(frame, d.ball_pos)
+        if pts is not None:
+            draw_corners(frame, pts)
+
+        # p.process_update(d.ball_pos)
+        # p.draw_waypoints(frame, d.ball_pos)
 
         ### Step 5: Display video on screen
         cv.imshow(window_name, frame)
@@ -87,10 +90,10 @@ def main():
         wait = cv.waitKey(1)
         if wait == ord('q'):
             break
-        elif wait == ord('b'):
-            p.prev_pt()
-        elif wait == ord('n'):
-            p.next_pt()
+        # elif wait == ord('b'):
+        #     p.prev_pt()
+        # elif wait == ord('n'):
+        #     p.next_pt()
 
     # clean up
     camera.vid.release()
