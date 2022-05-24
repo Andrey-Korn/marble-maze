@@ -28,7 +28,7 @@ class ball_controller:
     target_vel = [0, 0]
     vel = [0, 0]
     # window for speed estimation
-    window_size = 4
+    window_size = 5
     position_window = []
     # position_window = [None for _ in range(window_size)]
     print(position_window)
@@ -43,12 +43,13 @@ class ball_controller:
     x_pid.sample_time = 1.0 / 120
     y_pid.sample_time = 1.0 / 120
 
-    p_vel = 0.2
-    # p_vel = 0.15
+    # p_vel = 0.22
+    p_vel = 0.1
     # i_vel = 0.001
-    i_vel = 0.075
+    # i_vel = 0.35
+    i_vel = 0.45
     # i_vel = 0.01
-    d_vel = 0
+    d_vel = 0.001
     # d_vel = 0.01
 
     x_speed = PID(p_vel, i_vel, d_vel, setpoint=0)
@@ -81,14 +82,14 @@ class ball_controller:
                 self.x_pid.output_limits = (-0.0, 0.0)
                 self.y_pid.output_limits = (-0.0, 0.0)
             elif (abs(error[0]) < 45 and abs(error[1]) < 45):
-                self.x_pid.output_limits = (-0.6, 0.6)
-                self.y_pid.output_limits = (-0.6, 0.6)
+                self.x_pid.output_limits = (-0.3, 0.3)
+                self.y_pid.output_limits = (-0.3, 0.3)
             elif (abs(error[0]) < 100 and abs(error[1]) < 100):
-                self.x_pid.output_limits = (-0.8, 0.8)
-                self.y_pid.output_limits = (-0.8, 0.8)
+                self.x_pid.output_limits = (-0.4, 0.4)
+                self.y_pid.output_limits = (-0.4, 0.4)
             else:
-                self.x_pid.output_limits = (-0.8, 0.8)
-                self.y_pid.output_limits = (-0.8, 0.8)
+                self.x_pid.output_limits = (-0.5, 0.5)
+                self.y_pid.output_limits = (-0.5, 0.5)
                 
 
             self.x_out = -self.x_pid(error[0])
@@ -114,11 +115,11 @@ class ball_controller:
                 if abs(error[0]) < 0.2:
                     self.x_speed.output_limits = (-0.3, 0.3)
                 else:
-                    self.x_speed.output_limits = (-0.8, 0.8)
+                    self.x_speed.output_limits = (-0.4, 0.4)
                 if abs(error[1]) < 0.2:
                     self.y_speed.output_limits = (-0.3, 0.3)
                 else:
-                    self.y_speed.output_limits = (-0.8, 0.8)
+                    self.y_speed.output_limits = (-0.4, 0.4)
 
                 # if error[0] < 0.2 and self.vel[0] < 0.1:
                 #     self.output[0] = 0
@@ -161,8 +162,8 @@ class ball_controller:
         return (round(self.vel[0] - self.target_vel[0], ndigits=2), round(self.vel[1] - self.target_vel[1], ndigits=2))
 
     def process_update(self, ball_pos):
-        # self.position_control(ball_pos)
-        self.speed_control(ball_pos)
+        self.position_control(ball_pos)
+        # self.speed_control(ball_pos)
 
         self.motors.set_angle_and_send(self.output)
 
@@ -170,7 +171,7 @@ class ball_controller:
         self.target = target
 
     def set_target_velocity(self, target_velocity):
-        self.target_vel = [round(target_velocity[0] * 3, ndigits=2), round(target_velocity[1] * 3, ndigits=2)]
+        self.target_vel = [round(target_velocity[0] * 5, ndigits=2), round(target_velocity[1] * 5, ndigits=2)]
 
 def main():
     script_desc = 'Interact with ball control realtime via mouse events'
@@ -205,8 +206,8 @@ def main():
         start = timer() # time at which frame was ready
 
         ### Step 2: crop and transform to get final maze image
-        frame = d.crop_and_transform(frame)
-        # frame = d.crop_no_transform(frame)
+        # frame, pts = d.crop_and_transform(frame)
+        frame, pts = d.crop_no_transform(frame)
 
         ### Step 3: detect objects
         d.detect_objects(frame)

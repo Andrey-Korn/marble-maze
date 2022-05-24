@@ -408,8 +408,8 @@ def main():
 
 
         ### Step 2: crop and transform to get final maze image
-        frame, pts = d.crop_and_transform(frame)
-        # frame, pts = d.crop_no_transform(frame)
+        # frame, pts = d.crop_and_transform(frame)
+        frame, pts = d.crop_no_transform(frame)
 
         ### Step 3: detect objects
         d.detect_objects(frame)

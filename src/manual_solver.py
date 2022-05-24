@@ -41,7 +41,7 @@ def main():
         file = path_files['hard']
 
 
-    # p = path(file)
+    p = path(file)
 
     # Main loop - object detection and labeling for each video frame
     while True:
@@ -90,10 +90,10 @@ def main():
         wait = cv.waitKey(1)
         if wait == ord('q'):
             break
-        # elif wait == ord('b'):
-        #     p.prev_pt()
-        # elif wait == ord('n'):
-        #     p.next_pt()
+        elif wait == ord('b'):
+            p.prev_pt()
+        elif wait == ord('n'):
+            p.next_pt()
 
     # clean up
     camera.vid.release()
