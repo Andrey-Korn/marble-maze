@@ -63,7 +63,8 @@ def main():
         if not ret:
             print('End of video stream, exiting...')
             break
-        frame = crop_frame(frame, vid_settings['frame_height'], vid_settings['frame_width'])
+        # frame, pts = d.crop_and_transform(frame)
+        frame, pts = d.crop_no_transform(frame)
 
         # draw circles
         r.display_points(frame)

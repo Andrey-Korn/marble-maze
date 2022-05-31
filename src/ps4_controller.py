@@ -33,6 +33,7 @@ class ps4_controller(object):
                 if event.axis == 4:
                     self.axis_data[1] = -round(event.value, 2)
 
+        return self.axis_data
 
     def set_new_target(self):
         self.motors.set_angle_and_send(self.axis_data)

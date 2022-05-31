@@ -55,8 +55,8 @@ def main():
 
 
         ### Step 2: crop and transform to get final maze image
-        # frame = d.crop_and_transform(frame)
-        frame = d.crop_no_transform(frame)
+        # frame, pts = d.crop_and_transform(frame)
+        frame, pts = d.crop_no_transform(frame)
 
         ### Step 3: detect objects
         d.detect_objects(frame)
@@ -71,6 +71,8 @@ def main():
             # print(c.output)
             draw_magnitude(frame, d.ball_pos, c.output, vid_settings['magnitude_scalar'], color_map['brightorange'])
 
+        if pts is not None:
+            draw_corners(frame, pts)
         
         display_performance(frame, d.text_tr, d.text_spacing, start, end, frame_time, vid_settings['text_size'])
 
@@ -105,9 +107,3 @@ def main():
 if __name__ == "__main__":
 	main()
 
-
-def main():
-    pass
-
-if __name__ == "__main__":
-	main()

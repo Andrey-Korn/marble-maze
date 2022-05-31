@@ -51,8 +51,8 @@ config_files = {
 
 path_prefix = 'paths'
 path_files = {
-    # 'easy': f'{path_prefix}/easy.json',
-    'easy': f'{path_prefix}/easy2.json',
+    'easy': f'{path_prefix}/easy.json',
+    # 'easy': f'{path_prefix}/easy2.json',
     'med': f'{path_prefix}/med.json',
     'hard': f'{path_prefix}/hard.json'
 }
@@ -140,6 +140,10 @@ def draw_circles(img: np.ndarray, circles: list, num: int = -1, BGR_color: tuple
             annotate_point(img, f'{i}', (c[0], c[1]), BGR_color)
             i += 1
     return
+
+def draw_corners(img: np.ndarray, pts, BGR_color:tuple = color_map['blue']):
+    for p in pts:
+        cv.circle(img, (p[0].astype(int), p[1].astype(int)), 7, BGR_color, 2)
 
 def display_performance(frame, location, spacing, start, end, frame_time, text_size):
     elapsed_time = np.around(1000 * (end - frame_time), decimals=1)
