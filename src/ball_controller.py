@@ -14,9 +14,12 @@ mouse_x, mouse_y = -1, -1
 
 class ball_controller:
 
-    p = 0.001
-    i = 0.05
-    d = 0.0015
+    p = 0.1
+    # p = 0.001
+    i = 0
+    # i = 0.05
+    d = 0.2
+    # d = 0.0015
 
     # ESP32 stepper motor interface
     motors = None
@@ -78,12 +81,13 @@ class ball_controller:
         # print(f'{ball_pos}, {self.target}')
         if ball_pos and self.target is not None:
             error = ball_error(ball_pos, self.target)
-            if (abs(error[0]) < self.target[2] and abs(error[1]) < self.target[2]):
-                self.x_pid.output_limits = (-0.0, 0.0)
-                self.y_pid.output_limits = (-0.0, 0.0)
-            elif (abs(error[0]) < 45 and abs(error[1]) < 45):
-                self.x_pid.output_limits = (-0.3, 0.3)
-                self.y_pid.output_limits = (-0.3, 0.3)
+            # if (abs(error[0]) < self.target[2] and abs(error[1]) < self.target[2]):
+                # self.x_pid.output_limits = (-0.0, 0.0)
+                # self.y_pid.output_limits = (-0.0, 0.0)
+            # elif (abs(error[0]) < 45 and abs(error[1]) < 45):
+            if (abs(error[0]) < 45 and abs(error[1]) < 45):
+                self.x_pid.output_limits = (-0.35, 0.35)
+                self.y_pid.output_limits = (-0.35, 0.35)
             elif (abs(error[0]) < 100 and abs(error[1]) < 100):
                 self.x_pid.output_limits = (-0.4, 0.4)
                 self.y_pid.output_limits = (-0.4, 0.4)
@@ -113,13 +117,13 @@ class ball_controller:
     
 
                 if abs(error[0]) < 0.2:
+                    self.x_speed.output_limits = (-0.1, 0.1)
+                else:
                     self.x_speed.output_limits = (-0.3, 0.3)
-                else:
-                    self.x_speed.output_limits = (-0.4, 0.4)
                 if abs(error[1]) < 0.2:
-                    self.y_speed.output_limits = (-0.3, 0.3)
+                    self.y_speed.output_limits = (-0.1, 0.1)
                 else:
-                    self.y_speed.output_limits = (-0.4, 0.4)
+                    self.y_speed.output_limits = (-0.3, 0.3)
 
                 # if error[0] < 0.2 and self.vel[0] < 0.1:
                 #     self.output[0] = 0
