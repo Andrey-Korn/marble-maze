@@ -250,7 +250,7 @@ class detector(object):
 
         while iterations:
             eroded = cv.erode(src, erosion_kernel, iterations=1)
-            src = cv.dilate(eroded, dilation_kernel, iterations=1)
+            src = cv.dilate(eroded, dilation_kernel, iterations=4)
             iterations -= 1
 
         return src
@@ -265,9 +265,7 @@ class detector(object):
         """
         blur = cv.GaussianBlur(src, (7, 7), cv.BORDER_DEFAULT)
         blue_channel = blur[:,:,0]
-        # ret, green_mask = cv.threshold(blur[:,:,1], 50, 255, cv.THRESH_BINARY_INV)
-        ret, green_mask = cv.threshold(blur[:,:,1], 45, 255, cv.THRESH_BINARY_INV)
-        # ret, red_mask = cv.threshold(blur[:,:,2], 15, 255, cv.THRESH_BINARY_INV)
+        ret, green_mask = cv.threshold(blur[:,:,1], 75, 255, cv.THRESH_BINARY_INV)
         ret, red_mask = cv.threshold(blur[:,:,2], 5, 255, cv.THRESH_BINARY_INV)
         # masked = cv.inRange(blue_channel, 20, 150)
         masked = cv.inRange(blue_channel, 25, 150)
@@ -276,7 +274,7 @@ class detector(object):
         no_green_red = cv.bitwise_and(no_green, no_green, mask=no_red)
 
         kernel = np.ones((3,3), np.uint8)
-        # eroded_dilated = self.erode_and_dilate(no_green_red, 3)
+        # eroded_dilated = self.erode_and_dilate(no_green_red, 6)
         eroded_dilated = self.erode_and_dilate(no_green_red, 1)
 
         # uncomment to see ball segmentation
