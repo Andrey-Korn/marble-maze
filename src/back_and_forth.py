@@ -1,40 +1,26 @@
-# main loop for solving the maze manually with a ps4 controller
-# create motor interface, ball_controller, and other utils
 
-# import classes
-from motor_interface import motor_interface
-from position_controller import position_controller
-from feature_detector import detector
-from ps4_controller import ps4_controller
 from webcam import webcam
+from feature_detector import detector
+from position_controller import position_controller
 from path import path
 from utils import *
 from timeit import default_timer as timer
 
-# timer vars
-frame_time = 0
-start = 0
-end = 0
 
 def main():
-
-    # setup arguments and parse to get config files
-    script_desc = 'Display feature detection to screen'
+    script_desc = 'Interact with ball position control realtime via mouse events'
     args = setup_arg_parser(script_desc)
     vid_conf = args.camera
     maze_conf = args.maze
     vid_settings = read_yaml(vid_conf)
     maze_settings = read_yaml(maze_conf)
     window_name = vid_settings['window_name']
- 
+
     camera = webcam(vid_settings)
     d = detector(vid_settings, maze_settings)
-    ps4 = ps4_controller()
-
+    c = position_controller(vid_settings, maze_settings)
     file = args.path
-
     p = path(file, cycle=True)
-    # p = path(file, cycle=False)
 
     # Main loop - object detection and labeling for each video frame
     while True:
@@ -47,12 +33,7 @@ def main():
             break
         d.frame_count += 1
 
-        # control table via ps4 controller
-        ps4.read_joystick()
-        ps4.set_new_target()
-
         start = timer() # time at which frame was ready
-
 
         ### Step 2: crop and transform to get final maze image
         # frame, pts = d.crop_and_transform(frame)
@@ -61,13 +42,25 @@ def main():
         ### Step 3: detect objects
         d.detect_objects(frame)
 
+        #update PID control
+        c.process_update(d.ball_pos)
+        if d.ball_pos is not None:
+            # print(c.output)
+            draw_magnitude(frame, d.ball_pos, c.output, vid_settings['magnitude_scalar'], color_map['brightorange'])
+
         end = timer() # time after all calculation were completed
 
         ### Step 4: Draw detected objects and message text to video frame
         d.annotate_ball(frame)
-        # draw table tilt magnitude where ball is located
+
+        # draw table tilt target output where ball is located
         if d.ball_pos is not None:
-            draw_magnitude(frame, d.ball_pos, ps4.axis_data, vid_settings['magnitude_scalar'], color_map['brightorange'])
+            draw_magnitude(frame, d.ball_pos, c.output, vid_settings['magnitude_scalar'], color_map['brightorange'])
+
+        # draw error line
+        if d.ball_pos and c.target is not None:
+            draw_line(frame, (c.target[0], c.target[1]), (d.ball_pos[0], d.ball_pos[1]), BGR_color=color_map['red'])
+
         display_performance(frame, d.text_tr, d.text_spacing, start, end, frame_time, vid_settings['text_size'])
 
         if pts is not None:
@@ -76,19 +69,15 @@ def main():
         # update and show path
         if d.ball_pos is not None:
             p.process_update(d.ball_pos)
+            c.set_target(p.pts[p.idx])
         p.draw_waypoints(frame, d.ball_pos)
 
         ### Step 5: Display video on screen
         cv.imshow(window_name, frame)
         
-        ### Step 6: Check for exit command
-        wait = cv.waitKey(1)
-        if wait == ord('q'):
+        ### Step 6: Check for key command
+        if cv.waitKey(1) == ord('q'):
             break
-        elif wait == ord('b'):
-            p.prev_pt()
-        elif wait == ord('n'):
-            p.next_pt()
 
     # clean up
     camera.vid.release()
@@ -99,7 +88,5 @@ def main():
     print(f"Number of frames where ball was missed: {d.missed_frames_ball}")
     print(f"Ball detection rate: {np.around((1 - d.missed_frames_ball / d.frame_count), decimals=4) * 100}%")
 
-
 if __name__ == "__main__":
 	main()
-
