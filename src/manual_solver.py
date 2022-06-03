@@ -3,7 +3,7 @@
 
 # import classes
 from motor_interface import motor_interface
-from ball_controller import ball_controller
+from position_controller import position_controller
 from feature_detector import detector
 from ps4_controller import ps4_controller
 from webcam import webcam
@@ -31,17 +31,10 @@ def main():
     d = detector(vid_settings, maze_settings)
     ps4 = ps4_controller()
 
-    file = ''
+    file = args.path
 
-    if maze_conf == config_files['easy']:
-        file = path_files['easy']
-    if maze_conf == config_files['med']:
-        file = path_files['med']
-    if maze_conf == config_files['hard']:
-        file = path_files['hard']
-
-
-    p = path(file)
+    # p = path(file, cycle=True)
+    p = path(file, cycle=False)
 
     # Main loop - object detection and labeling for each video frame
     while True:
@@ -80,8 +73,10 @@ def main():
         if pts is not None:
             draw_corners(frame, pts)
 
-        # p.process_update(d.ball_pos)
-        # p.draw_waypoints(frame, d.ball_pos)
+        # update and show path
+        if d.ball_pos is not None:
+            p.process_update(d.ball_pos)
+        p.draw_waypoints(frame, d.ball_pos)
 
         ### Step 5: Display video on screen
         cv.imshow(window_name, frame)
