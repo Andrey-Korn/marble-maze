@@ -12,95 +12,55 @@ from motor_interface import motor_interface
 # global mouse click pos
 mouse_x, mouse_y = -1, -1
 
-class ball_controller:
+class velocity_controller:
 
-    p = 0.1
-    # p = 0.001
-    i = 0
-    # i = 0.05
-    d = 0.2
-    # d = 0.0015
+    x_pid, y_pid = None, None   # PID controllers
 
-    # ESP32 stepper motor interface
-    motors = None
+    # PID constants for x and y axes
+    px, ix, dx, py, iy, dy = 0, 0, 0, 0, 0, 0
 
-    # target to move the ball towards
-    target = None
+    vel = [0, 0]        # velocity measurement
+    target_vel = [0, 0] # initial target velocity
+    motors = None       # ESP32 stepper motor interface
 
-    # velocities
-    target_vel = [0, 0]
-    vel = [0, 0]
-    # window for speed estimation
+    # velocity estimation
     window_size = 5
     position_window = []
-    # position_window = [None for _ in range(window_size)]
-    print(position_window)
-
-    # setup PID, and set setpoint to an error of 0
-    x_pid = PID(p, i, d, setpoint=0)
-    x_out = 0
-    y_pid = PID(p, i, d, setpoint=0)
-    y_out = 0
-    # output = 0
-    output = [0, 0]
-    x_pid.sample_time = 1.0 / 120
-    y_pid.sample_time = 1.0 / 120
-
-    # p_vel = 0.22
-    p_vel = 0.1
-    # i_vel = 0.001
-    # i_vel = 0.35
-    i_vel = 0.45
-    # i_vel = 0.01
-    d_vel = 0.001
-    # d_vel = 0.01
-
-    x_speed = PID(p_vel, i_vel, d_vel, setpoint=0)
-    y_speed = PID(p_vel, i_vel, d_vel, setpoint=0)
-    x_speed.output_limits = (-0.9, 0.9)
-    # x_speed.output_limits = (-1.0, 1.0)
-    y_speed.output_limits = (-0.9, 0.9)
-    # y_speed.output_limits = (-1.0, 1.0)
-
-    x_speed.sample_time = 1.0 / 120
-    y_speed.sample_time = 1.0 / 120
 
 
-    def __init__(self):
+    def __init__(self, vid_settings, maze_settings):
+
+        # set yaml parameters
+        self.px = maze_settings['x_pid_vel'][0]
+        self.ix = maze_settings['x_pid_vel'][1]
+        self.dx = maze_settings['x_pid_vel'][2]
+        self.py = maze_settings['y_pid_vel'][0]
+        self.iy = maze_settings['y_pid_vel'][1]
+        self.dy = maze_settings['y_pid_vel'][2]
+
+        # PID output limits from yaml
+        self.big_lim = maze_settings['vel_lim_big']
+        self.med_lim = maze_settings['vel_lim_med']
+        self.sml_lim = maze_settings['vel_lim_sml']
+
+        self.fps = vid_settings['fps']
+
+        # setup PID, w/ error setpoint of 0
+        self.x_pid = PID(self.px, self.ix, self.dx, setpoint=0)
+        self.y_pid = PID(self.py, self.iy, self.dy, setpoint=0)
+        self.x_pid.sample_time = 1.0 / self.fps
+        self.y_pid.sample_time = 1.0 / self.fps
+
         # set output limits to format ESP-32 driver expects
-        self.x_pid.output_limits = (-0.8, 0.8)
-        self.y_pid.output_limits = (-0.8, 0.8)
+        self.set_pid_output_limit(self.big_lim)
 
+        # create ESP32 motor UART connection
         self.motors = motor_interface()
 
-    def mouse_event(self, event, x, y, flags, param):
-        if event == cv.EVENT_LBUTTONDOWN:
-            self.target = (x, y, 25)
+    # def mouse_event(self, event, x, y, flags, param):
+    #     if event == cv.EVENT_LBUTTONDOWN:
+    #         self.target = (x, y, 25)
 
-    def position_control(self, ball_pos):
-        # print(f'{ball_pos}, {self.target}')
-        if ball_pos and self.target is not None:
-            error = ball_error(ball_pos, self.target)
-            # if (abs(error[0]) < self.target[2] and abs(error[1]) < self.target[2]):
-                # self.x_pid.output_limits = (-0.0, 0.0)
-                # self.y_pid.output_limits = (-0.0, 0.0)
-            # elif (abs(error[0]) < 45 and abs(error[1]) < 45):
-            if (abs(error[0]) < 45 and abs(error[1]) < 45):
-                self.x_pid.output_limits = (-0.35, 0.35)
-                self.y_pid.output_limits = (-0.35, 0.35)
-            elif (abs(error[0]) < 100 and abs(error[1]) < 100):
-                self.x_pid.output_limits = (-0.4, 0.4)
-                self.y_pid.output_limits = (-0.4, 0.4)
-            else:
-                self.x_pid.output_limits = (-0.5, 0.5)
-                self.y_pid.output_limits = (-0.5, 0.5)
-                
-
-            self.x_out = -self.x_pid(error[0])
-            self.y_out = self.y_pid(error[1])
-            self.output = [self.x_out, self.y_out]
-        else:
-            self.output = [0, 0]
 
     def speed_control(self, ball_pos):
         if ball_pos is not None:
@@ -109,12 +69,9 @@ class ball_controller:
             # set output from pid to get desired speed
             if self.target_vel is None:
                 self.output = [0, 0]
-            # elif:
-                # error = ball_error(ball_pos, self.)
             else:
                 error = self.velocity_error()
                 print(f'target velocity: {self.target_vel} velocity error: {error} | current velocity: {self.vel}')
-    
 
                 if abs(error[0]) < 0.2:
                     self.x_speed.output_limits = (-0.1, 0.1)
@@ -125,60 +82,51 @@ class ball_controller:
                 else:
                     self.y_speed.output_limits = (-0.3, 0.3)
 
-                # if error[0] < 0.2 and self.vel[0] < 0.1:
-                #     self.output[0] = 0
-                # else:
-                #     self.output[0] = self.x_speed(error[0])
-
-                # if error[1] < 0.2 and self.vel[1] < 0.1:
-                #     self.output[1] = 0
-                # else:
-                #     self.output[1] = self.x_speed(error[1])
-
                 self.output = [self.x_speed(error[0]), self.y_speed(error[1])]
         else:
             self.output = [0, 0]
 
+
     def update_speed_estimate(self, ball_pos):
-        # if 
         # pop last position from queue
         if len(self.position_window) == self.window_size:
             self.position_window.pop(0)
         self.position_window.append([ball_pos[0], ball_pos[1]])
         # print(self.position_window)
         self.calculate_speed()
-        
-        # pass
 
     def calculate_speed(self):
         # print(self.target_vel)
         # print(self.position_window)
         max = np.amax(self.position_window, axis=0)
         min = np.amin(self.position_window, axis=0)
-        self.vel = max - min
+        self.vel = (max - min) / self.window_size
+        # self.vel = self.vel / self.window_size
         # print(self.vel)
-        self.vel = self.vel / self.window_size
-        # print(self.vel)
-        # pass
-        
+
+    def x_set_pid_lim(self, lim):
+        self.x_pid.output_limits = (-lim, lim)
+
+    def y_set_pid_lim(self, lim):
+        self.y_pid.output_limits = (-lim, lim)
+
+    def set_pid_lim(self, lim):
+        self.x_pid.output_limits = (-lim, lim)
+        self.y_pid.output_limits = (-lim, lim)   
 
     def velocity_error(self):
         return (round(self.vel[0] - self.target_vel[0], ndigits=2), round(self.vel[1] - self.target_vel[1], ndigits=2))
 
-    def process_update(self, ball_pos):
-        self.position_control(ball_pos)
-        # self.speed_control(ball_pos)
-
-        self.motors.set_angle_and_send(self.output)
-
-    def set_target(self, target):
-        self.target = target
-
     def set_target_velocity(self, target_velocity):
         self.target_vel = [round(target_velocity[0] * 5, ndigits=2), round(target_velocity[1] * 5, ndigits=2)]
 
+    def process_update(self, ball_pos):
+        self.speed_control(ball_pos)
+        self.motors.set_angle_and_send(self.output)
+
+
 def main():
-    script_desc = 'Interact with ball control realtime via mouse events'
+    script_desc = 'Interact with ball velocity control realtime via controller joystick'
     args = setup_arg_parser(script_desc)
     vid_conf = args.camera
     maze_conf = args.maze
@@ -188,11 +136,8 @@ def main():
 
     camera = webcam(vid_settings)
     d = detector(vid_settings, maze_settings)
-    c = ball_controller()
+    c = velocity_controller()
     ps4 = ps4_controller()
-
-    # register mouse click callback
-    cv.setMouseCallback(window_name, c.mouse_event)
 
     # Main loop - object detection and labeling for each video frame
     while True:
@@ -205,7 +150,6 @@ def main():
             break
         d.frame_count += 1
 
-        # c.target_vel = ps4.read_joystick()
         c.set_target_velocity(ps4.read_joystick())
         start = timer() # time at which frame was ready
 
@@ -230,6 +174,7 @@ def main():
 
         if d.ball_pos is not None:
             draw_magnitude(frame, d.ball_pos, ps4.axis_data, vid_settings['magnitude_scalar'], color_map['green'])
+
         # draw error line
         if d.ball_pos and c.target is not None:
             draw_line(frame, (c.target[0], c.target[1]), (d.ball_pos[0], d.ball_pos[1]), BGR_color=color_map['red'])

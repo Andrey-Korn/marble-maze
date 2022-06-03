@@ -54,37 +54,36 @@ path_files = {
     'easy': f'{path_prefix}/easy.json',
     # 'easy': f'{path_prefix}/easy2.json',
     'med': f'{path_prefix}/med.json',
-    'hard': f'{path_prefix}/hard.json'
+    'hard': f'{path_prefix}/hard.json',
+    'line': f'{path_prefix}/line.json',
+    'rectangle': f'{path_prefix}/rectangle.json'
 }
 
 def setup_arg_parser(desc, maze_req=True):
     parser = argparse.ArgumentParser(description=desc)
     # get maze config
-    parser.add_argument('-m', '--maze', type=int, required=True, nargs=1, 
-                        help='specify maze board: (1) easy (2) medium (3) hard')
+    parser.add_argument('-m', '--maze', type=str, nargs=1, 
+                        help='specify maze config file')
 
     # get camera config
     parser.add_argument('-c', '--camera', type=str, nargs=1,
                         help='specify camera YAML config file')
 
     # get path file
-    # parser.add_argument('-p', '--path', type=str, nargs=1,
-                        # help='specify path JSON file')
+    parser.add_argument('-p', '--path', type=str, nargs=1,
+                        help='specify path JSON file')
 
     args = parser.parse_args()
     if args.camera == None:
-        # args.camera = config_files['camera_1080']
         args.camera = config_files['camera_720']
 
-    if args.maze[0] == 1:
-        args.maze = config_files['easy']
-    elif args.maze[0] == 2:
-        args.maze = config_files['med']
-    elif args.maze[0] == 3:
+    if args.maze == None:
         args.maze = config_files['hard']
-    else:
-        print('not a valid maze board #!')
-        quit()
+
+    if args.path == None:
+        # args.path = path_files['line']
+        args.path = path_files['rectangle']
+        # args.path = path_files['hard']
 
     print(args)
     return args

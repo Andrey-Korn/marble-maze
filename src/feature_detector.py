@@ -2,6 +2,7 @@ from os import stat
 import cv2 as cv
 import numpy as np
 from webcam import webcam
+from pykalman import KalmanFilter
 from timeit import default_timer as timer
 
 from utils import *
@@ -21,6 +22,9 @@ class detector(object):
 
     # detected objects
     path, ball_pos = None, None
+
+    # kalman filter for estimating position
+    kf = None
 
     # For calculating statistics (object detection accuracy, framerate)
     frame_count = 0
@@ -57,6 +61,10 @@ class detector(object):
         self.text_tr = (self.settings['text_tr'][0], self.settings['text_tr'][1])
         self.text_spacing = self.settings['text_spacing']
         self.text_size = self.settings['text_size']
+
+        # initialize Kalman Filter
+        # self.kf = KalmanFilter(transition_matrices=np.array([1, 1], [0, 1]),
+                                # transition_covariance= 0.01)
 
 
     def detect_path(self, img: np.ndarray) -> np.ndarray:
@@ -250,7 +258,7 @@ class detector(object):
 
         while iterations:
             eroded = cv.erode(src, erosion_kernel, iterations=1)
-            src = cv.dilate(eroded, dilation_kernel, iterations=1)
+            src = cv.dilate(eroded, dilation_kernel, iterations=4)
             iterations -= 1
 
         return src
@@ -265,9 +273,7 @@ class detector(object):
         """
         blur = cv.GaussianBlur(src, (7, 7), cv.BORDER_DEFAULT)
         blue_channel = blur[:,:,0]
-        # ret, green_mask = cv.threshold(blur[:,:,1], 50, 255, cv.THRESH_BINARY_INV)
-        ret, green_mask = cv.threshold(blur[:,:,1], 45, 255, cv.THRESH_BINARY_INV)
-        # ret, red_mask = cv.threshold(blur[:,:,2], 15, 255, cv.THRESH_BINARY_INV)
+        ret, green_mask = cv.threshold(blur[:,:,1], 75, 255, cv.THRESH_BINARY_INV)
         ret, red_mask = cv.threshold(blur[:,:,2], 5, 255, cv.THRESH_BINARY_INV)
         # masked = cv.inRange(blue_channel, 20, 150)
         masked = cv.inRange(blue_channel, 25, 150)
@@ -276,7 +282,7 @@ class detector(object):
         no_green_red = cv.bitwise_and(no_green, no_green, mask=no_red)
 
         kernel = np.ones((3,3), np.uint8)
-        # eroded_dilated = self.erode_and_dilate(no_green_red, 3)
+        # eroded_dilated = self.erode_and_dilate(no_green_red, 6)
         eroded_dilated = self.erode_and_dilate(no_green_red, 1)
 
         # uncomment to see ball segmentation
@@ -291,6 +297,11 @@ class detector(object):
             if r > self.settings['ball_radius'][0] and r < self.settings['ball_radius'][1]:
                 # circles.append((x, y, r))
                 # print(f'x: {x} y: {y} r: {r}')
+
+                # update Kalman filter estimate
+                # mean, covar = self.kf.filter_update(mean, covar, )
+                # print(mean[-1])
+                # print(covar[-1])
                 return [int(x), int(y), int(r)]
 
         return None

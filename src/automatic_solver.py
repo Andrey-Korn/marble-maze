@@ -1,7 +1,8 @@
 # main loop for solving the maze
 # create motor interface, ball_controller, and other utils
+from operator import pos
 from motor_interface import motor_interface
-from ball_controller import ball_controller
+from position_controller import position_controller
 from feature_detector import detector
 from webcam import webcam
 from path import path
@@ -27,18 +28,12 @@ def main():
     camera = webcam(vid_settings)
     d = detector(vid_settings, maze_settings)
 
-    file = ''
+    file = args.path
 
-    if maze_conf == config_files['easy']:
-        file = path_files['easy']
-    if maze_conf == config_files['med']:
-        file = path_files['med']
-    if maze_conf == config_files['hard']:
-        file = path_files['hard']
+    # p = path(file, cycle=True)
+    p = path(file, cycle=False)
 
-
-    p = path(file)
-    c = ball_controller()
+    c = position_controller()
 
     # Main loop - object detection and labeling for each video frame
     while True:

@@ -11,52 +11,95 @@ class path(object):
     waypoint_range = 0
     idx = 0
     time_at_pt = 0
-    finished = False
+    prev_time = 0
+    at_pt = False
 
-    def __init__(self, path_file) -> None:
+    def __init__(self, path_file, cycle=False) -> None:
         f = open(path_file, 'r')
         self.pts = json.load(f)
 
         # grab waypoint radius
         self.waypoint_range = self.pts[0][2]
 
+        self.cycle = cycle
+        self.time_at_pt = 2
 
     # draw all waypoints with color_code
     def draw_waypoints(self, frame, ball_pos):
-        # draw first waypoint in green
-        draw_circles(frame, self.pts[self.idx:], BGR_color=color_map['green'])
-        # draw error line
-        if ball_pos is not None:
-           draw_line(frame, (self.pts[self.idx][0], self.pts[self.idx][1]), (ball_pos[0], ball_pos[1]), BGR_color=color_map['red'])
+        # draw linear path
+        if not self.cycle:
 
-        if len(self.pts) > 1:
-            draw_circles(frame, self.pts[self.idx + 1:], BGR_color=color_map['orange'], annotate=True)
+            # draw first waypoint in green
+            # draw_circles(frame, self.pts[self.idx:], BGR_color=color_map['green'])
+            if self.at_pt:
+                draw_circles(frame, [self.pts[self.idx]], BGR_color=color_map['green'])
+            else:
+                draw_circles(frame, [self.pts[self.idx]], BGR_color=color_map['blue'])
+            # draw error line
+            if ball_pos is not None:
+                draw_line(frame, (self.pts[self.idx][0], self.pts[self.idx][1]), (ball_pos[0], ball_pos[1]), BGR_color=color_map['red'])
 
-        if self.finished:
-            draw_text(frame, 'winner!', position= (500, 500), BGR_color=color_map['blue'], font_size=3)
+            if len(self.pts) > 1:
+                draw_circles(frame, self.pts[self.idx + 1:], BGR_color=color_map['orange'], annotate=True)
+
+        else:
+            draw_circles(frame, self.pts, BGR_color=color_map['orange'])
+            # draw blue if waypoint not reached yet, green if counter is ticking
+            if self.at_pt:
+                draw_circles(frame, [self.pts[self.idx]], BGR_color=color_map['green'])
+            else:
+                draw_circles(frame, [self.pts[self.idx]], BGR_color=color_map['blue'])
+
         
     def prev_pt(self):
-        if self.idx > 0:
+        # process linear
+        if not self.cycle:
+            if self.idx > 0:
+                self.idx -= 1
+
+        # process cyclical
+        else:
             self.idx -= 1
+            if self.idx < 0:
+                self.idx = len(self.pts) - 1
+
+        self.at_pt = False
+
 
     def next_pt(self):
-        if self.idx < len(self.pts) - 1:
+        # process linear
+        if not self.cycle:
+            if self.idx < len(self.pts) - 1:
+                self.idx += 1
+
+        # process cyclical
+        else:
             self.idx += 1
+            if self.idx >= len(self.pts):
+                self.idx = 0
+
+        self.at_pt = False
+        
     
-    # compare ball position and waypoint and progess maze
-    def process_update(self, ball_pos):
-        # print(f'{len(self.pts)}, {self.idx}')
-        if self.idx == len(self.pts) - 1 and self.ball_at_pt(ball_pos):
-            self.finished = True
-
-        if self.ball_at_pt(ball_pos) and len(self.pts) - 1 > self.idx:
-            self.idx += 1
-
-
     def ball_at_pt(self, ball_pos):
         if ball_pos is not None:
             error = ball_error((ball_pos[0], ball_pos[1]), (self.pts[self.idx]))
             return at_target(error, self.waypoint_range)
+        return
+
+    # compare ball position and waypoint and progess maze
+    def process_update(self, ball_pos):
+        # if at a point, update timing
+        if self.at_pt:
+            # move idx if we've been on this pt long enough
+            if timer() - self.prev_time >= self.time_at_pt:
+                self.next_pt()
+
+        # check if at pt
+        elif self.ball_at_pt(ball_pos):
+            self.at_pt = True
+            self.prev_time = timer()
+        
         return
 
 
@@ -71,17 +114,11 @@ def main():
     maze_settings = read_yaml(maze_conf)
     window_name = vid_settings['window_name']
 
-    file = ''
+    file = args.path
 
-    if maze_conf == config_files['easy']:
-        file = path_files['easy']
-    if maze_conf == config_files['med']:
-        file = path_files['med']
-    if maze_conf == config_files['hard']:
-        file = path_files['hard']
-
-    p = path(file)
-    print(p.pts)
+    # p = path(file, cycle=True)
+    p = path(file, cycle=False)
+    # print(p.pts)
     camera = webcam(vid_settings)
     d = detector(vid_settings, maze_settings)
 
@@ -99,8 +136,8 @@ def main():
         start = timer() # time at which frame was ready
 
         ### Step 2: crop and transform to get final maze image
-        # frame = d.crop_and_transform(frame)
-        frame = d.crop_no_transform(frame)
+        # frame, pts = d.crop_and_transform(frame)
+        frame, pts = d.crop_no_transform(frame)
 
         ### Step 3: detect objects
         d.detect_objects(frame)
