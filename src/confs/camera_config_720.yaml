@@ -21,8 +21,8 @@ frame_height:
   - 650
 
 frame_width:
-  - 200
-  - 1100
+  - 240
+  - 1060
 
 ball_radius:
   - 8
@@ -44,11 +44,12 @@ text_tr:
 
 text_spacing: 40
 
-text_size: 1
+text_size: 0.85
 
 # corner offsets
 # (tl_offset, tr_offset, bl_offset, br_offset)
-# only setup for 1080p currently
+# only setup for 720 currently
 offsets:
   - 110
-  - 80
+  - 45
+  - 60

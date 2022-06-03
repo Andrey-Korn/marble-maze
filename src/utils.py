@@ -51,12 +51,11 @@ config_files = {
 
 path_prefix = 'paths'
 path_files = {
-    'easy': f'{path_prefix}/easy.json',
-    # 'easy': f'{path_prefix}/easy2.json',
-    'med': f'{path_prefix}/med.json',
     'hard': f'{path_prefix}/hard.json',
+    'hard_transform': f'{path_prefix}/hard_transform.json',
     'line': f'{path_prefix}/line.json',
-    'rectangle': f'{path_prefix}/rectangle.json'
+    'rectangle': f'{path_prefix}/rectangle.json',
+    'small_rectangle': f'{path_prefix}/small_rectangle.json'
 }
 
 def setup_arg_parser(desc, maze_req=True):
@@ -82,8 +81,10 @@ def setup_arg_parser(desc, maze_req=True):
 
     if args.path == None:
         # args.path = path_files['line']
-        args.path = path_files['rectangle']
+        # args.path = path_files['rectangle']
+        args.path = path_files['small_rectangle']
         # args.path = path_files['hard']
+        # args.path = path_files['hard_transform']
 
     print(args)
     return args
@@ -105,6 +106,25 @@ def ball_error(ball_pos, target) -> tuple:
 
 def at_target(error, range):
     return (abs(error[0]) < range and abs(error[1]) < range)
+
+def normalize_magnitudes(raw):
+    x, y = raw[0], raw[1]
+    # print(f'raw: x: {x}, y: {y}')
+    # if x == 0 or y == 0:
+        # return raw 
+    # alpha = np.arctan(float(y)/x)
+    # print(f'aplha: {alpha}')
+    # y = np.round(y * np.sin(alpha), 2)
+    # x = np.round(x * np.cos(alpha), 2)
+    # print(f'dif: x: {x}, y: {y}')
+
+    s = abs(x) + abs(y)
+    print(s)
+    if  s > 1:
+        x = np.round(float(x) / (s), 2)
+        y = np.round(float(y) / (s), 2)
+    print([x, y])
+    return [x, y]
 
 # cv functions
 def draw_text(img: np.ndarray, text:str, position: tuple, BGR_color: tuple, font_size=1.5) -> None:
@@ -150,6 +170,6 @@ def display_performance(frame, location, spacing, start, end, frame_time, text_s
     fps = np.around(1.0 / (end - frame_time), decimals=1)
 
     # draw frame time
-    draw_text(frame, f'rtt: {elapsed_time} ms', location, color_map["cyan"])
-    draw_text(frame, f'calc t: {calc_time} ms', (location[0], location[1] + spacing), color_map["cyan"])
+    draw_text(frame, f'rtt: {elapsed_time} ms', location, color_map["cyan"], text_size)
+    draw_text(frame, f'calc t: {calc_time} ms', (location[0], location[1] + spacing), color_map["cyan"], text_size)
     draw_text(frame, f'FPS: {fps}', (location[0], location[1] + (2 * spacing)), color_map["cyan"], text_size)

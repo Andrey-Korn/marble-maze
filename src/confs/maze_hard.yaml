@@ -1,31 +1,35 @@
 # configuration for the hardest BRIO maze (default)
 
-fast_thresh: 20    # threshold for FAST feature detection for corners
+fast_thresh: 90    # threshold for FAST feature detection for corners
 
-pos_lim_big: 0.90 # Max table tilt limit (pick between 0.1 - 1.0)
+pos_lim_big: 1.00 # Max table tilt limit (pick between 0.1 - 1.0)
 pos_lim_med: 0.80
-pos_lim_sml: 0.70
+pos_lim_sml: 0.30
 
 time_to_stay: 5
 
 x_pid_pos:    # PID values for position controller, x-axis
-  # - 0.050 # p
-  - 0.015 # p
-  # - 0.018 # i
-  - 0.015 # i
-  # - 0.035 # d
-  - 0.010 #d
+  # - 0.001 # p
+  # - 0.008 # i
+  # - 0.001 # d
+  # - 0.000 # d
+
+  - 0.070 # p
+  - 0.120 # i
+  - 0.037 # d
 
 y_pid_pos:    # PID values for position controller, y-axis
-  # - 0.050 # p
-  - 0.015 # p
-  # - 0.018 # i
-  - 0.015 # i
-  # - 0.035 # d
-  - 0.010 # d
+  # - 0.002 # p
+  # - 0.010 # i
+  # - 0.001 # d
+  # - 0.000 # d
+
+  - 0.070 # p
+  - 0.155 # i
+  - 0.035 # d
 
 
-vel_lim_big: 0.6   # Max table tilt limit (pick between 0.1 - 1.0)
+vel_lim_big: 1.0   # Max table tilt limit (pick between 0.1 - 1.0)
 vel_lim_med: 0.5
 vel_lim_sml: 0.3
 
@@ -33,11 +37,11 @@ window_size: 5      # num of frames to use for velocity estimate
 target_velocity: 5  # target ball velocity in pixels
 
 x_pid_vel:    # PID constants for velocity control, x-axis
-  - 0.1   # p
-  - 0     # i
-  - 0.2   # d
+  - 0.01   # p
+  - 0.01   # i
+  - 0.02   # d
 
 y_pid_vel:    # PID constants for velocity control, y-axis
-  - 0.1   # p
-  - 0     # i
-  - 0.2   # d
+  - 0.01   # p
+  - 0.01   # i
+  - 0.02   # d

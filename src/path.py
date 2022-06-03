@@ -22,7 +22,7 @@ class path(object):
         self.waypoint_range = self.pts[0][2]
 
         self.cycle = cycle
-        self.time_at_pt = 2
+        self.time_at_pt = 1
 
     # draw all waypoints with color_code
     def draw_waypoints(self, frame, ball_pos):
@@ -140,7 +140,8 @@ def main():
         frame, pts = d.crop_no_transform(frame)
 
         ### Step 3: detect objects
-        d.detect_objects(frame)
+        if frame is not None:
+            d.detect_objects(frame)
 
         end = timer() # time after all calculation were completed
 

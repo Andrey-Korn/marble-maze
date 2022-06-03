@@ -20,7 +20,7 @@ class velocity_controller:
     px, ix, dx, py, iy, dy = 0, 0, 0, 0, 0, 0
 
     vel = [0, 0]        # velocity measurement
-    target_vel = [0, 0] # initial target velocity
+    target = [0, 0]     # initial target velocity
     motors = None       # ESP32 stepper motor interface
 
     # velocity estimation
@@ -52,7 +52,7 @@ class velocity_controller:
         self.y_pid.sample_time = 1.0 / self.fps
 
         # set output limits to format ESP-32 driver expects
-        self.set_pid_output_limit(self.big_lim)
+        self.set_pid_lim(self.big_lim)
 
         # create ESP32 motor UART connection
         self.motors = motor_interface()
@@ -67,22 +67,23 @@ class velocity_controller:
             self.update_speed_estimate(ball_pos)
 
             # set output from pid to get desired speed
-            if self.target_vel is None:
+            if self.target is None:
                 self.output = [0, 0]
             else:
                 error = self.velocity_error()
-                print(f'target velocity: {self.target_vel} velocity error: {error} | current velocity: {self.vel}')
+                print(f'target velocity: {self.target} velocity error: {error} | current velocity: {self.vel}')
 
-                if abs(error[0]) < 0.2:
-                    self.x_speed.output_limits = (-0.1, 0.1)
-                else:
-                    self.x_speed.output_limits = (-0.3, 0.3)
-                if abs(error[1]) < 0.2:
-                    self.y_speed.output_limits = (-0.1, 0.1)
-                else:
-                    self.y_speed.output_limits = (-0.3, 0.3)
+                # if abs(error[0]) < 0.2:
+                #     self.x_pid.output_limits = (-0.1, 0.1)
+                # else:
+                #     self.x_pid.output_limits = (-0.3, 0.3)
+                # if abs(error[1]) < 0.2:
+                #     self.y_pid.output_limits = (-0.1, 0.1)
+                # else:
+                #     self.y_pid.output_limits = (-0.3, 0.3)
 
-                self.output = [self.x_speed(error[0]), self.y_speed(error[1])]
+                raw_output = [self.x_pid(error[0]), self.y_pid(error[1])]
+                self.output = normalize_magnitudes(raw_output)
         else:
             self.output = [0, 0]
 
@@ -115,10 +116,10 @@ class velocity_controller:
         self.y_pid.output_limits = (-lim, lim)   
 
     def velocity_error(self):
-        return (round(self.vel[0] - self.target_vel[0], ndigits=2), round(self.vel[1] - self.target_vel[1], ndigits=2))
+        return (round(self.vel[0] - self.target[0], ndigits=2), round(self.vel[1] - self.target[1], ndigits=2))
 
     def set_target_velocity(self, target_velocity):
-        self.target_vel = [round(target_velocity[0] * 5, ndigits=2), round(target_velocity[1] * 5, ndigits=2)]
+        self.target = [round(target_velocity[0] * 5, ndigits=2), round(target_velocity[1] * 5, ndigits=2)]
 
     def process_update(self, ball_pos):
         self.speed_control(ball_pos)
@@ -136,7 +137,7 @@ def main():
 
     camera = webcam(vid_settings)
     d = detector(vid_settings, maze_settings)
-    c = velocity_controller()
+    c = velocity_controller(vid_settings, maze_settings)
     ps4 = ps4_controller()
 
     # Main loop - object detection and labeling for each video frame
@@ -154,11 +155,12 @@ def main():
         start = timer() # time at which frame was ready
 
         ### Step 2: crop and transform to get final maze image
-        # frame, pts = d.crop_and_transform(frame)
-        frame, pts = d.crop_no_transform(frame)
+        frame, pts = d.crop_and_transform(frame)
+        # frame, pts = d.crop_no_transform(frame)
 
         ### Step 3: detect objects
-        d.detect_objects(frame)
+        if frame is not None:
+            d.detect_objects(frame)
 
         #update PID control
         c.process_update(d.ball_pos)
@@ -176,17 +178,19 @@ def main():
             draw_magnitude(frame, d.ball_pos, ps4.axis_data, vid_settings['magnitude_scalar'], color_map['green'])
 
         # draw error line
-        if d.ball_pos and c.target is not None:
-            draw_line(frame, (c.target[0], c.target[1]), (d.ball_pos[0], d.ball_pos[1]), BGR_color=color_map['red'])
+        # if d.ball_pos and c.target is not None:
+            # draw_line(frame, (c.target[0], c.target[1]), (d.ball_pos[0], d.ball_pos[1]), BGR_color=color_map['red'])
 
-        display_performance(frame, d.text_tr, d.text_spacing, start, end, frame_time, vid_settings['text_size'])
+        if frame is not None:
+            display_performance(frame, d.text_tr, d.text_spacing, start, end, frame_time, vid_settings['text_size'])
         
         # display mouse event to screen
-        if c.target is not None:
-            draw_circles(frame, [c.target], num=1, BGR_color=color_map['green'])
+        # if c.target is not None:
+            # draw_circles(frame, [c.target], num=1, BGR_color=color_map['green'])
 
         ### Step 5: Display video on screen
-        cv.imshow(window_name, frame)
+        if frame is not None:
+            cv.imshow(window_name, frame)
         
         ### Step 6: Check for key command
         if cv.waitKey(1) == ord('q'):

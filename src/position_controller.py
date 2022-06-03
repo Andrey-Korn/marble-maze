@@ -57,30 +57,31 @@ class position_controller:
         # print(f'{ball_pos}, {self.target}')
         if ball_pos and self.target is not None:
             error = ball_error(ball_pos, self.target)
-            print(error)
+            # print(error)
 
             # set appropriate limits
-            if abs(error[0]) < 25:
-                self.set_x_pid_lim(0)
-            elif abs(error[0]) < 80:
-                self.set_y_pid_lim(self.sml_lim)
-            elif abs(error[0]) < 120:
+            if abs(error[0]) < 15:
+                self.set_x_pid_lim(self.sml_lim)
+            elif abs(error[0]) < 60:
                 self.set_x_pid_lim(self.med_lim)
             else:
                 self.set_x_pid_lim(self.big_lim)
 
-            if abs(error[1]) < 25:
-                self.set_y_pid_lim(0)
-            elif abs(error[1]) < 80:
+            if abs(error[1]) < 15:
                 self.set_y_pid_lim(self.sml_lim)
-            elif abs(error[1]) < 120:
+            elif abs(error[1]) < 60:
                 self.set_y_pid_lim(self.med_lim)
             else:
                 self.set_y_pid_lim(self.big_lim)
 
-            self.output = [-self.x_pid(error[0]), self.y_pid(error[1])]
+
+            raw_output = [-self.x_pid(error[0]), self.y_pid(error[1])]
+            self.output = normalize_magnitudes(raw_output)
+
+            # self.output = [-self.x_pid(error[0]), self.y_pid(error[1])]
         else:
-            self.output = [0, 0]
+            # self.output = [0, 0]
+            pass 
 
 
     def set_x_pid_lim(self, lim):

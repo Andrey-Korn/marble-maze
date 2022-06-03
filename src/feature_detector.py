@@ -45,9 +45,9 @@ class detector(object):
         
         # set initial points to use as a corner estimation
         self.prev_tl = (0, 0)
-        self.prev_tr = (0, self.width)
-        self.prev_bl = (self.height, 0)
-        self.prev_br = (self.height, self.width)
+        self.prev_tr = (0, self.width - 1)
+        self.prev_bl = (self.height - 1, 0)
+        self.prev_br = (self.height - 1, self.width - 1)
 
         # corner filtering
         self.med_offset = self.settings['median_offset']
@@ -63,8 +63,9 @@ class detector(object):
         self.text_size = self.settings['text_size']
 
         # initialize Kalman Filter
-        # self.kf = KalmanFilter(transition_matrices=np.array([1, 1], [0, 1]),
-                                # transition_covariance= 0.01)
+        self.kf = KalmanFilter()
+        # filtered_state_means = np.zeros(1)
+        # filtered_state_cov = np.zeros(1)
 
 
     def detect_path(self, img: np.ndarray) -> np.ndarray:
@@ -158,7 +159,7 @@ class detector(object):
         h, w, _ = src.shape
         # print(h)
         # print(w)
-        tl_frame = crop_frame(src, (0, self.offsets[0]), (0, self.offsets[0]))
+        tl_frame = crop_frame(src, (0, self.offsets[1]), (0, self.offsets[0]))
         tl_corner = self.fast.detect(tl_frame, None)
         tl_frame = cv.drawKeypoints(tl_frame, tl_corner, None, color=(255, 0, 0))
         cv.imshow('top_left', tl_frame)
@@ -172,7 +173,7 @@ class detector(object):
 
         # search for top right
         # print('\n-----------------------\nTOP RIGHT\n-----------------------\n')
-        tr_frame = crop_frame(src, (0, self.offsets[0]), (w - self.offsets[0], w))
+        tr_frame = crop_frame(src, (0, self.offsets[2]), (w - self.offsets[0], w - 38))
         tr_corner = self.fast.detect(tr_frame, None)
         tr_frame = cv.drawKeypoints(tr_frame, tr_corner, None, color=(255, 0, 0))
         cv.imshow('top_right', tr_frame)
@@ -186,7 +187,7 @@ class detector(object):
 
         # search for bot left
         # print('\n-----------------------\nBOT LEFT\n-----------------------\n')
-        bl_frame = crop_frame(src, (h - self.offsets[1], h), (0, self.offsets[1]))
+        bl_frame = crop_frame(src, (h - self.offsets[1], h), (0, self.offsets[2]))
         bl_corner = self.fast.detect(bl_frame, None)
         bl_frame = cv.drawKeypoints(bl_frame, bl_corner, None, color=(255, 0, 0))
         cv.imshow('bot_left', bl_frame)
@@ -200,14 +201,14 @@ class detector(object):
 
         # search for bot right
         # print('\n-----------------------\nBOT RIGHT\n-----------------------\n')
-        br_frame = crop_frame(src, (h - self.offsets[1], h), (w - self.offsets[1], w))
+        br_frame = crop_frame(src, (h - self.offsets[1], h - 5), (w - self.offsets[2], w - 5))
         br_corner = self.fast.detect(br_frame, None)
         br_frame = cv.drawKeypoints(br_frame, br_corner, None, color=(255, 0, 0))
         cv.imshow('bot_right', br_frame)
         br_corner = self.filter_corner(br_corner)
         if br_corner is not None:
-            br_corner = ((w - self.offsets[1]) + br_corner[0], (h - self.offsets[1]) + br_corner[1])
-            self.prev_br
+            br_corner = ((w - self.offsets[2]) + br_corner[0] - 5, (h - self.offsets[1]) + br_corner[1] - 5)
+            self.prev_br = br_corner
         else:
             br_corner = self.prev_br
         # print(br_corner)
