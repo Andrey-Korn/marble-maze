@@ -3,8 +3,8 @@
 fast_thresh: 90    # threshold for FAST feature detection for corners
 
 pos_lim_big: 1.00 # Max table tilt limit (pick between 0.1 - 1.0)
-pos_lim_med: 0.80
-pos_lim_sml: 0.30
+pos_lim_med: 0.60
+pos_lim_sml: 0.10
 
 time_to_stay: 5
 

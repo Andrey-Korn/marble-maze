@@ -82,9 +82,9 @@ def setup_arg_parser(desc, maze_req=True):
     if args.path == None:
         # args.path = path_files['line']
         # args.path = path_files['rectangle']
-        args.path = path_files['small_rectangle']
+        # args.path = path_files['small_rectangle']
         # args.path = path_files['hard']
-        # args.path = path_files['hard_transform']
+        args.path = path_files['hard_transform']
 
     print(args)
     return args
@@ -119,11 +119,11 @@ def normalize_magnitudes(raw):
     # print(f'dif: x: {x}, y: {y}')
 
     s = abs(x) + abs(y)
-    print(s)
+    # print(s)
     if  s > 1:
         x = np.round(float(x) / (s), 2)
         y = np.round(float(y) / (s), 2)
-    print([x, y])
+    # print([x, y])
     return [x, y]
 
 # cv functions
