@@ -82,9 +82,9 @@ def setup_arg_parser(desc, maze_req=True):
     if args.path == None:
         # args.path = path_files['line']
         # args.path = path_files['rectangle']
-        # args.path = path_files['small_rectangle']
+        args.path = path_files['small_rectangle']
         # args.path = path_files['hard']
-        args.path = path_files['hard_transform']
+        # args.path = path_files['hard_transform']
 
     print(args)
     return args

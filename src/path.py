@@ -17,6 +17,7 @@ class path(object):
     def __init__(self, path_file, cycle=False) -> None:
         f = open(path_file, 'r')
         self.pts = json.load(f)
+        f.close()
 
         # grab waypoint radius
         self.waypoint_range = self.pts[0][2]
