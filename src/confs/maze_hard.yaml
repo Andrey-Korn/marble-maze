@@ -3,30 +3,20 @@
 fast_thresh: 90    # threshold for FAST feature detection for corners
 
 pos_lim_big: 1.00 # Max table tilt limit (pick between 0.1 - 1.0)
-pos_lim_med: 0.60
-pos_lim_sml: 0.10
+pos_lim_med: 0.90
+pos_lim_sml: 0.20
 
 time_to_stay: 5
 
 x_pid_pos:    # PID values for position controller, x-axis
-  # - 0.001 # p
-  # - 0.008 # i
-  # - 0.001 # d
-  # - 0.000 # d
-
   - 0.070 # p
   - 0.120 # i
-  - 0.037 # d
+  - 0.047 # d
 
 y_pid_pos:    # PID values for position controller, y-axis
-  # - 0.002 # p
-  # - 0.010 # i
-  # - 0.001 # d
-  # - 0.000 # d
-
   - 0.070 # p
   - 0.155 # i
-  - 0.035 # d
+  - 0.042 # d
 
 
 vel_lim_big: 1.0   # Max table tilt limit (pick between 0.1 - 1.0)

@@ -6,6 +6,7 @@ from position_controller import position_controller
 from feature_detector import detector
 from webcam import webcam
 from path import path
+from logger import logger
 from utils import *
 from timeit import default_timer as timer
 
@@ -32,8 +33,11 @@ def main():
 
     # p = path(file, cycle=True)
     p = path(file, cycle=False)
+    l = logger()
 
     c = position_controller(vid_settings, maze_settings)
+
+    time_begin = timer()
 
     # Main loop - object detection and labeling for each video frame
     while True:
@@ -79,6 +83,10 @@ def main():
 
         ### Step 5: Display video on screen
         cv.imshow(window_name, frame)
+
+        ### log for later graphing
+        if d.ball_pos and c.target is not None:
+            l.log_new_data(d.ball_pos, c.target, np.round(end - time_begin, 2))
         
         ### Step 6: Check for exit command
         wait = cv.waitKey(1)
@@ -92,6 +100,9 @@ def main():
     # clean up
     camera.vid.release()
     cv.destroyAllWindows()
+
+    # write logs
+    l.write_log()
 
     # Print statistics to terminal
     print(f'frames captured: {d.frame_count}')
