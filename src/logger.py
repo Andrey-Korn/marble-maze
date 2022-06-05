@@ -2,6 +2,8 @@
 import json
 import numpy as np
 import matplotlib.pyplot as plt
+import argparse
+from utils import *
 
 class logger():
 
@@ -36,7 +38,7 @@ class logger():
         ball_y = [i[1] for i in ball]
         target = [i[1] for i in self.log]
         target_x = [i[0] for i in target]
-        target_y = [i[0] for i in target]
+        target_y = [i[1] for i in target]
         time = [i[2] for i in self.log]
         # print(ball)
         # print(target)
@@ -74,17 +76,37 @@ class logger():
         plt.savefig(f'{prefix}/plot.png')
         plt.show()
 
-    def sse(self):
-        pass
+    def sse(self, e):
+        error = np.sqrt( abs(e[0])**2 + abs(e[1])**2)**2 
+        return error
 
     def print_stats(self):
-        pass
+        ball = [i[0] for i in self.log]
+        ball_x = [i[0] for i in ball]
+        ball_y = [i[1] for i in ball]
+        target = [i[1] for i in self.log]
+        target_x = [i[0] for i in target]
+        target_y = [i[0] for i in target]
+        time = [i[2] for i in self.log]
+
+        total_error = 0
+        for i in range(len(ball)):
+            e = ball_error(ball[i], target[i])
+            # print(e)
+            total_error += self.sse(e)
+
+        print(f'SSE of run: {int(total_error/len(ball))}')
 
 
 # main graphs the passed in log file with certain settings
 def main():
+    desc = 'log file graphing and performance'
+    parser = argparse.ArgumentParser(description=desc)
+    parser.add_argument('-l', '--log', type=str, nargs=1, required=True, help='log file to graph')
+    args = parser.parse_args()
+
+    log_file = args.log[0]
     l = logger()
-    log_file = 'logs/log.json'
     l.load_log(log_file)
     l.graph_log()
     l.print_stats()

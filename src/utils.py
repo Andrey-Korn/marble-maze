@@ -85,6 +85,8 @@ def setup_arg_parser(desc, maze_req=True):
         args.path = path_files['small_rectangle']
         # args.path = path_files['hard']
         # args.path = path_files['hard_transform']
+    else:
+        args.path = args.path[0]
 
     print(args)
     return args
