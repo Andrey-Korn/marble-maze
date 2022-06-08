@@ -74,7 +74,7 @@ class detector(object):
                                [0., 0., 0., 1.] ])
         self.kf.H = np.array([ [1., 0., 0., 0.],
                                [0., 1., 0., 0.] ])
-        self.kf.P *= 500.
+        self.kf.P *= 100.
         self.kf.R = 5.
 
 
@@ -382,7 +382,7 @@ class detector(object):
             self.kf.update(np.array([self.ball_pos[0], self.ball_pos[1]]))
             self.noisy_ball_pos = self.ball_pos
             self.ball_pos = (int(self.kf.x[0]), int(self.kf.x[1]), int(self.ball_pos[2]))
-            print(self.kf.x)
+            # print(self.kf.x)
 
 
     def annotate_path(self, frame):
