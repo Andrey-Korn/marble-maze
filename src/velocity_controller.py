@@ -24,7 +24,7 @@ class velocity_controller:
     motors = None       # ESP32 stepper motor interface
 
     # velocity estimation
-    window_size = 5
+    window_size = 4
     position_window = []
 
 

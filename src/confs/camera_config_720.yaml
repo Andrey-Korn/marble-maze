@@ -51,5 +51,5 @@ text_size: 0.85
 # only setup for 720 currently
 offsets:
   - 110
-  - 45
+  - 35
   - 60

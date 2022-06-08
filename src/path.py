@@ -14,7 +14,7 @@ class path(object):
     prev_time = 0
     at_pt = False
 
-    def __init__(self, path_file, cycle=False) -> None:
+    def __init__(self, path_file, t=1, cycle=False) -> None:
         f = open(path_file, 'r')
         self.pts = json.load(f)
         f.close()
@@ -23,7 +23,8 @@ class path(object):
         self.waypoint_range = self.pts[0][2]
 
         self.cycle = cycle
-        self.time_at_pt = 1
+        self.time_at_pt = t
+        self.n = 0
 
     # draw all waypoints with color_code
     def draw_waypoints(self, frame, ball_pos):
@@ -95,6 +96,7 @@ class path(object):
             # move idx if we've been on this pt long enough
             if timer() - self.prev_time >= self.time_at_pt:
                 self.next_pt()
+                self.n += 1
 
         # check if at pt
         elif self.ball_at_pt(ball_pos):

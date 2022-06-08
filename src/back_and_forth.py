@@ -21,10 +21,12 @@ def main():
     d = detector(vid_settings, maze_settings)
     c = position_controller(vid_settings, maze_settings)
     file = args.path
-    p = path(file, cycle=True)
+    p = path(file, t=5, cycle=True)
     l = logger()
 
     time_begin = timer()
+
+    n = 10
 
     # Main loop - object detection and labeling for each video frame
     while True:
@@ -81,10 +83,14 @@ def main():
         
         ### log for later graphing
         if d.ball_pos and c.target is not None:
-            l.log_new_data(d.ball_pos, c.target, np.round(end - time_begin, 2))
+            # l.log_new_data(d.ball_pos, c.target, np.round(end - time_begin, 2))
+            l.log_new_data(d.ball_pos, c.target, np.round(end - time_begin, 2), d.noisy_ball_pos)
 
         ### Step 6: Check for key command
         if cv.waitKey(1) == ord('q'):
+            break
+
+        if p.n >= n:
             break
 
     # clean up

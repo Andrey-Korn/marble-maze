@@ -1,8 +1,9 @@
 from os import stat
 import cv2 as cv
 import numpy as np
+from numpy.lib.function_base import append
 from webcam import webcam
-from pykalman import KalmanFilter
+from filterpy.kalman import KalmanFilter
 from timeit import default_timer as timer
 
 from utils import *
@@ -19,12 +20,14 @@ class detector(object):
     prev_tr = None
     prev_bl = None
     prev_br = None
+    prev_ball = None
 
     # detected objects
     path, ball_pos = None, None
 
     # kalman filter for estimating position
     kf = None
+    noisy_ball_pos = (0, 0, 20)
 
     # For calculating statistics (object detection accuracy, framerate)
     frame_count = 0
@@ -40,7 +43,7 @@ class detector(object):
         print(f'frame width: {self.width} frame height: {self.height}')
 
         # setup fast corner detection
-        self.fast = cv.FastFeatureDetector_create(threshold=25)
+        self.fast = cv.FastFeatureDetector_create(threshold=maze_settings['fast_thresh'])
         self.fast.setNonmaxSuppression(0)
         
         # set initial points to use as a corner estimation
@@ -63,9 +66,16 @@ class detector(object):
         self.text_size = self.settings['text_size']
 
         # initialize Kalman Filter
-        self.kf = KalmanFilter()
-        # filtered_state_means = np.zeros(1)
-        # filtered_state_cov = np.zeros(1)
+        self.kf = KalmanFilter(dim_x=4, dim_z=2)
+        self.kf.x = np.array([0., 0., 0., 0.])
+        self.kf.F = np.array([ [1., 0., 1., 0.],
+                               [0., 1., 0., 1.], 
+                               [0., 0., 1., 0.], 
+                               [0., 0., 0., 1.] ])
+        self.kf.H = np.array([ [1., 0., 0., 0.],
+                               [0., 1., 0., 0.] ])
+        self.kf.P *= 500.
+        self.kf.R = 5.
 
 
     def detect_path(self, img: np.ndarray) -> np.ndarray:
@@ -299,10 +309,7 @@ class detector(object):
                 # circles.append((x, y, r))
                 # print(f'x: {x} y: {y} r: {r}')
 
-                # update Kalman filter estimate
-                # mean, covar = self.kf.filter_update(mean, covar, )
-                # print(mean[-1])
-                # print(covar[-1])
+                # return ball prediction
                 return [int(x), int(y), int(r)]
 
         return None
@@ -342,9 +349,9 @@ class detector(object):
         ## Path
         # Find current path outline/contour (only every 3rd frame)
         # if frame_count % 3 == 0:
-        #     new_path = detect_path(frame)
-        #     if new_path is not None:
-        #         path = new_path
+        # new_path = self.detect_path(frame)
+        # if new_path is not None:
+            # path = new_path
 
         ## Ball
         # Find current ball position
@@ -369,6 +376,14 @@ class detector(object):
         # If ball not found during this cycle, tally a detection failure 
         if self.ball_pos is None:
             self.missed_frames_ball += 1
+        else:
+            # update Kalman filter estimate
+            self.kf.predict()
+            self.kf.update(np.array([self.ball_pos[0], self.ball_pos[1]]))
+            self.noisy_ball_pos = self.ball_pos
+            self.ball_pos = (int(self.kf.x[0]), int(self.kf.x[1]), int(self.ball_pos[2]))
+            print(self.kf.x)
+
 
     def annotate_path(self, frame):
         # Draw path

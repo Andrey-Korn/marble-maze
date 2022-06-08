@@ -62,14 +62,14 @@ class position_controller:
             # set appropriate limits
             if abs(error[0]) < 15:
                 self.set_x_pid_lim(self.sml_lim)
-            elif abs(error[0]) < 60:
+            elif abs(error[0]) < 70:
                 self.set_x_pid_lim(self.med_lim)
             else:
                 self.set_x_pid_lim(self.big_lim)
 
             if abs(error[1]) < 15:
                 self.set_y_pid_lim(self.sml_lim)
-            elif abs(error[1]) < 60:
+            elif abs(error[1]) < 70:
                 self.set_y_pid_lim(self.med_lim)
             else:
                 self.set_y_pid_lim(self.big_lim)
