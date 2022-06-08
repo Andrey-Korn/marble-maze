@@ -62,9 +62,10 @@ class velocity_controller:
     #         self.target = (x, y, 25)
 
 
-    def speed_control(self, ball_pos):
+    def speed_control(self, ball_pos, kf=False):
         if ball_pos is not None:
-            self.update_speed_estimate(ball_pos)
+            # self.update_speed_estimate(ball_pos)
+            self.update_speed_from_kf(kf)
 
             # set output from pid to get desired speed
             if self.target is None:
@@ -87,6 +88,9 @@ class velocity_controller:
         else:
             self.output = [0, 0]
 
+    def update_speed_from_kf(self, kf):
+        # print(kf)
+        self.vel = [round(kf.x[2]), round(kf.x[3])]
 
     def update_speed_estimate(self, ball_pos):
         # pop last position from queue
@@ -121,8 +125,8 @@ class velocity_controller:
     def set_target_velocity(self, target_velocity):
         self.target = [round(target_velocity[0] * 5, ndigits=2), round(target_velocity[1] * 5, ndigits=2)]
 
-    def process_update(self, ball_pos):
-        self.speed_control(ball_pos)
+    def process_update(self, ball_pos, kf):
+        self.speed_control(ball_pos, kf)
         self.motors.set_angle_and_send(self.output)
 
 
@@ -163,7 +167,7 @@ def main():
             d.detect_objects(frame)
 
         #update PID control
-        c.process_update(d.ball_pos)
+        c.process_update(d.ball_pos, d.kf)
 
         end = timer() # time after all calculation were completed
 
